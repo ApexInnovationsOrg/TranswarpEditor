@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:FieldEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:metadata="com.apexinnovations.metadata.*"
+		 width="100%"
+		 implements="com.apexinnovations.metadata.editors.IExpandableEditor" xmlns:editors="com.apexinnovations.metadata.editors.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	
+	<editors:states>
+		<s:State name="collapsed" />
+		<s:State name="expanded" />		
+	</editors:states>
+	
+	<editors:transitions>
+		<s:Transition fromState="collapsed" autoReverse="true">
+			<s:Resize duration="300" target="{scroller}" />			
+		</s:Transition> 		
+	</editors:transitions>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.RemoveItemEvent;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import mx.core.IVisualElement;
+			
+			protected var _itemClass:Class;
+			protected var focusedItem:ListItemEditor;
+						
+			[Bindable("collapsedHeightChanged")]
+			public function get collapsedHeight():Number {
+				if(!editorGroup || editorGroup.numElements < 1) {
+					return 31;
+				} else {
+					var e:DisplayObject = editorGroup.getElementAt(0) as DisplayObject;
+					return Math.max(21, e.getBounds(this).height) + 10;
+				}
+			}
+			
+					
+			[Bindable]
+			public var itemLabel:String = ""; 
+			
+			public function get itemClass():Class {	return _itemClass;	}
+			public function set itemClass(value:Class):void	{
+				_itemClass = value;
+				update();
+			}
+
+			override public function set xml(value:XML):void {
+				super.xml = value;
+				update();
+			}
+			
+			override public function set label(value:String):void {
+				super.label = value;
+				update();
+			}
+			
+			public function expand():void {
+				currentState = "expanded";
+				this.setFocus();
+			}
+			
+			public function collapse():void {
+				currentState = "collapsed";
+				hoverGlow.alpha = 0;
+				if(focusedItem) {
+					focusedItem.focus = false;
+					focusedItem = null;
+				}
+			}
+
+			override protected function createChildren():void {
+				super.createChildren();
+				update();
+			}
+			
+			override protected function commitProperties():void {
+				super.commitProperties();
+				dispatchEvent(new Event("collapsedHeightChanged"));
+			}
+			
+			protected function update():void {
+				if(!editorGroup)
+					return;
+				
+				invalidateProperties();
+				
+				while(editorGroup.numElements > 1)
+					editorGroup.removeElementAt(0);
+				
+				if(!xml || !field || !_itemClass)
+					return;
+				
+				for each (var item:XML in xml[field].*) {
+					if(item.localName()) //Ignore text nodes caused by "extra" new lines
+						insertNewItem(item);					
+				}
+				
+			}
+
+			protected function createNewItem():void {
+				var editor:ListItemEditor = insertNewItem();
+				editor.initializeAsNewItem();
+				var list:XMLList = xml[field];
+				if(!list || list.length() == 0) {
+					xml[field] = <{field}/>
+					list = xml[field];
+				}
+				list.appendChild(editor.data);
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+			protected function insertNewItem(item:XML = null):ListItemEditor {
+				var editor:ListItemEditor = new _itemClass();
+				if(item)
+					editor.data = item;
+				
+				editorGroup.addElementAt(editor, editorGroup.numElements-1);
+				editor.addEventListener(FOCUS_GAINED, editorFocusGained);
+				editor.addEventListener(RemoveItemEvent.REMOVE_ITEM, removeItem)
+				return editor;
+			}
+
+			protected function hoverGlowHandler(event:MouseEvent):void {
+				if(currentState == "collapsed")
+					hoverGlow.alpha = event.type == MouseEvent.ROLL_OVER ? 1 : 0;
+			}
+
+
+			protected function editorFocusGained(event:Event):void {
+				if(event.target == focusedItem)
+					return;
+				
+				if(focusedItem)
+					focusedItem.focus = false;
+				
+				focusedItem = event.target as ListItemEditor;
+				
+				if(focusedItem)
+					focusedItem.focus = true;
+			}
+
+
+			protected function removeItem(event:RemoveItemEvent):void {
+				delete event.item.parent().children()[event.item.childIndex()];
+				editorGroup.removeElement(event.target as IVisualElement);
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:Scroller id="scroller" verticalScrollPolicy="off" horizontalScrollPolicy="off" width="100%" height.collapsed="{collapsedHeight}" height="{editorGroup.height}">
+		<s:Group width="100%" height="100%" buttonMode.collapsed="true" rollOut="hoverGlowHandler(event)" rollOver="hoverGlowHandler(event)" click="dispatchEvent(new Event(FOCUS_GAINED))">
+			<s:Rect width="100%" height="100%">
+				<s:fill><s:SolidColor color="0xffffff"/></s:fill>
+				<s:stroke><s:SolidColorStroke/></s:stroke>
+				<s:filters>
+					<s:GlowFilter id="hoverGlow" color="0x0066ff" inner="true" alpha="0" alpha.expanded="0" blurX="10" blurY="10" strength=".9"/>
+				</s:filters>
+			</s:Rect>
+			<s:VGroup id="editorGroup" width="100%" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" enabled.collapsed="false" horizontalAlign="center">
+				<s:Button label="{'Add ' + itemLabel}" click="createNewItem()" icon="@Embed('/assets/add_icon_hovered.png')" />	
+			</s:VGroup>
+		</s:Group>
+	</s:Scroller> 
+	
+</editors:FieldEditor>

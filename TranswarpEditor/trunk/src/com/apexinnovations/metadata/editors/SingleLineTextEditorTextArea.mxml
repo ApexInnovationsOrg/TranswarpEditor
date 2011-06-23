@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls:TextEditorTextArea xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							 xmlns:s="library://ns.adobe.com/flex/spark" 
+							 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:metadata="com.apexinnovations.metadata.*"
+							 changing="changingHandler(event)"
+							 heightInLines="1" xmlns:controls="com.apexinnovations.metadata.controls.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import flashx.textLayout.operations.CompositeOperation;
+			import flashx.textLayout.operations.FlowOperation;
+			import flashx.textLayout.operations.SplitParagraphOperation;
+			
+			import spark.events.TextOperationEvent;
+			
+
+			protected function changingHandler(event:TextOperationEvent):void {
+				var flow:FlowOperation = event.operation;
+				
+				if(flow is SplitParagraphOperation)
+					event.preventDefault();
+				else if(flow is CompositeOperation) {
+					var composite:CompositeOperation = flow as CompositeOperation;
+					
+					for each(flow in composite.operations)
+						if(flow is SplitParagraphOperation)
+							event.preventDefault();
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+</controls:TextEditorTextArea>

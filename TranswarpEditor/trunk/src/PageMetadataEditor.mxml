@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata:MetadataEditorBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+					      xmlns:mx="library://ns.adobe.com/flex/mx"
+						  xmlns:metadata="com.apexinnovations.metadata.*"
+						  xmlns:controls="com.apexinnovations.metadata.controls.*"
+						  minWidth="1280" minHeight="720"
+						  closing="closingHandler(event)"
+						  creationComplete="creationCompleteHandler(event)">
+	<metadata:states>
+		<s:State name="default"/>
+		<s:State name="loading" />
+		<s:State name="editing" />
+	</metadata:states>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.EditorConfig;
+			import com.apexinnovations.metadata.controls.SaveDialog;
+			import com.apexinnovations.metadata.events.FileSelectionEvent;
+			import com.apexinnovations.metadata.events.PageChangingEvent;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			import com.apexinnovations.transwarp.assets.AssetLoader;
+			import com.apexinnovations.transwarp.data.Course;
+			import com.apexinnovations.transwarp.data.Courseware;
+			import com.apexinnovations.transwarp.data.Page;
+			import com.apexinnovations.transwarp.data.Product;
+			import com.apexinnovations.transwarp.events.PageSelectionEvent;
+			import com.apexinnovations.transwarp.utils.Utils;
+			import com.apexinnovations.transwarp.webservices.ApexWebService;
+			
+			import flashx.textLayout.TextLayoutVersion;
+			import flashx.textLayout.formats.TextLayoutFormat;
+			import flashx.textLayout.utils.CharacterUtil;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerChildList;
+			
+			import spark.events.IndexChangeEvent;
+			
+			protected var file:File;
+			
+			public static const COURSEWARE_INIT:String = "coursewareInitialized";
+			
+			[Bindable] protected var config:EditorConfig;
+			protected var configFile:File;
+			
+			protected var product:Product;
+			
+			[Bindable] protected var currentPageData:XML;
+			
+			protected var pendingSelection:Page;
+			
+			protected var saveDialog:SaveDialog;
+			
+			protected var createCompleted:Boolean = false;
+			
+			protected var requestDataByProduct:Object = {
+				IMPULSE : 	"8998d80e3ea4b7688fb3e724c80a9f8f595fdefe848dda2407dbe3c2a1f7a039e41a2f6dc36ac5ee02c3b1494a236afdcfd51e186a766ab5fa9c202deea38f40",
+				HEMI 	:	"8998d80e3ea4b7688fb3e724c80a9f8ff9016eca432b0943a4c5f23da88342c9060f4aa4957ecc421a3d09a797c5766a27d642cccbe47f34013ba1e2040a7a2a",
+				CAHEMI 	:	"e312c92591e7067db6857b02130f7d8b3ce8016b9b28cc8de90efbcc81356dfb0619e755974be99c80a9d5f458deaa16720256f25b2f946b6b0a4befb9791c10",
+				RESP 	:	"69f26ef8147d984e52a9cf6cdb397592daa7a3f56a4c26b5a915c68b9c0c64ade2488a93188d9024989fc1d535d852c2875016a31690bcdf90ff9fe57b4fbe47"				
+			}
+	
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				configFile = new File(File.applicationStorageDirectory.nativePath + "\\config.xml");
+				if(configFile.exists) {
+					configFile.addEventListener(Event.COMPLETE, configLoaded);
+					configFile.addEventListener(IOErrorEvent.IO_ERROR, configLoadError);
+					configFile.load();
+				} else
+					config = new EditorConfig();
+				
+				
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				createCompleted = true;
+				applyConfiguration();
+			}
+			
+			
+			protected function configLoaded(event:Event):void {
+				var configFile:File = event.target as File;
+				config = new EditorConfig(new XML(configFile.data));
+				applyConfiguration();
+			}
+			
+			protected function applyConfiguration():void {
+				if(!config || !createCompleted)
+					return;
+				
+				if(config.selectedProduct) {
+					for(var i:int = 0; i < productSelection.dataProvider.length; ++i)
+						if(productSelection.dataProvider.getItemAt(i).value == config.selectedProduct) {
+							productSelection.selectedIndex = i;
+							break;
+						}
+				}
+			}
+			
+			protected function repoSelected(event:FileSelectionEvent):void {
+				config.repoPath = event.file.nativePath;
+				config.selectedProduct = productSelection.selectedItem.value;
+				
+				currentState = "loading";
+				
+				var requestVars:URLVariables = new URLVariables();
+				requestVars.data = requestDataByProduct[productSelection.selectedItem.value];
+				requestVars.baseURL = ApexWebService.baseURL = "http://www.apexsandbox.com";
+				var request:URLRequest = new URLRequest("http://www.apexsandbox.com/Classroom/engine/load.php");
+				request.data = requestVars;
+				request.method = URLRequestMethod.POST;
+				
+				var loader:URLLoader = new URLLoader(request);
+				loader.addEventListener(Event.COMPLETE, productDataLoaded);
+				
+				progressBar.source = loader;
+			}
+
+
+			protected function savePageHandler(event:Event):void {
+				XML.prettyPrinting = false;
+				
+				var stream:FileStream = new FileStream()
+				stream.open(file, FileMode.WRITE);
+				
+				var bytes:ByteArray = new ByteArray();
+				bytes.writeMultiByte(editor.page.toXMLString(), "utf-8");
+				
+				stream.writeBytes(bytes);
+				stream.close();
+				
+				commitPendingSelection();
+			}
+
+
+			protected function closingHandler(event:Event):void {
+	
+				var stream:FileStream = new FileStream()
+				stream.open(configFile, FileMode.WRITE);
+				
+				var bytes:ByteArray = new ByteArray();
+				bytes.writeMultiByte(config.xml.toXMLString(), "iso-8859-1");
+				
+				stream.writeBytes(bytes);
+				stream.close();
+			}
+
+			protected function configLoadError(event:Event):void {
+				trace("config load error.  resetting to defaults");
+				config = new EditorConfig();
+			}
+
+			protected function productDataLoaded(event:Event):void {
+				var loader:URLLoader = event.target as URLLoader;
+				XML.ignoreWhitespace = false;
+				var xml:XML = new XML(loader.data);
+				xml.@color = xml.product.@color; //"#ff3337"; 
+				var c:Courseware = new Courseware(xml, false);
+				
+				for each(var course:Course in c.product.courses)
+					for each(var page:Page in course.pages)
+						page.visited = true;
+				
+				AssetLoader.instance.addBitmapAsset("http://www.apexsandbox.com/Classroom/engine/" + c.product.logoBig, "logoBig");
+				AssetLoader.instance.addBitmapAsset("http://www.apexsandbox.com/Classroom/engine/" + c.product.logoSmall, "logoSmall");
+				
+				currentState = "editing";
+				
+				c.addEventListener(PageSelectionEvent.PAGE_SELECTION_CHANGED, pageSelected);
+				
+				dispatchEvent(new Event(COURSEWARE_INIT));
+				
+				c.dispatchEvent(new PageSelectionEvent(c.currentPage));
+			}
+
+
+			protected function pageSelected(event:PageSelectionEvent):void {
+			
+				var name:String = 'PAGE_' + Utils.zeroPad(event.page.id, 6);
+				var path:String = config.repoPath + File.separator + name + '.xml';
+				file = new File(path);
+				
+				if(!file.exists)
+					file = new File(config.repoPath + File.separator + name + File.separator + name + '.xml');
+				
+				if(file.exists) {
+					file.addEventListener(Event.COMPLETE, fileLoaded);
+					file.load();
+				}				
+			}
+
+			protected function fileLoaded(event:Event):void {
+				currentPageData = new XML(file.data);
+			}
+
+
+			protected function pageChangingHandler(event:PageChangingEvent):void {
+				if(event.page == pendingSelection)
+					pendingSelection = null;
+				else if (editor && editor.madeChanges) {
+					pendingSelection = event.page;
+					event.preventDefault();
+					
+					if(!saveDialog) {
+						saveDialog = SaveDialog(PopUpManager.createPopUp(DisplayObjectContainer(this.systemManager), SaveDialog, true, PopUpManagerChildList.POPUP));
+						saveDialog.addEventListener(TranswarpEditorEvent.CANCEL_PENDING_SELECTION, cancelPendingSelection);
+						saveDialog.addEventListener(TranswarpEditorEvent.SAVE_PAGE, savePageHandler);
+						saveDialog.addEventListener(TranswarpEditorEvent.COMMIT_PENDING_SELECTION, commitPendingSelection);
+					}
+					
+					saveDialog.display();
+				}
+			}
+
+			protected function cancelPendingSelection(event:Event = null):void {
+				pendingSelection = null;
+			}
+
+			protected function commitPendingSelection(event:Event = null):void {
+				if(pendingSelection) {
+					Courseware.instance.currentPage = pendingSelection;
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:VGroup excludeFrom="editing" horizontalAlign="center" horizontalCenter="0" verticalCenter="-50" gap="15" enabled.loading="false">
+		<s:Label text="Select the product to edit:" paddingBottom="-10" fontSize="20" />
+		<s:ButtonBar id="productSelection" requireSelection="true">
+			<s:ArrayList>
+				<fx:Object label="" value="IMPULSE" icon="@Embed('/assets/imPULSE_logo.png')" />
+				<fx:Object label="" value="HEMI" icon="@Embed('/assets/Hemispheres_logo.png')" />
+				<fx:Object label="" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
+				<fx:Object label="" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
+			</s:ArrayList>
+		</s:ButtonBar>
+		<controls:DirectoryBrowser id="directoryBrowser" defaultPath="{config.repoPath}" fileSelection="repoSelected(event)" />
+	</s:VGroup>
+	
+	<s:Panel horizontalCenter="0" verticalCenter="0" includeIn="loading" title="Loading Product Data" width="250">
+		<mx:ProgressBar id="progressBar" verticalCenter="0" horizontalCenter="0" label="%3%%" mode="event" />
+	</s:Panel>
+	
+	<s:HGroup height="100%" width="100%" includeIn="editing" gap="0">
+		<controls:ProductBrowser pageChanging="pageChangingHandler(event)"/>
+		<controls:PageEditor id="editor" page="{currentPageData}" savePage="savePageHandler(event)"/>
+	</s:HGroup>
+</metadata:MetadataEditorBase>

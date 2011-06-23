@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:ui="com.apexinnovations.transwarp.ui.*"
+		 height="100%" xmlns:assets="com.apexinnovations.transwarp.assets.*">
+	<fx:Metadata>
+		[Event(name="pageChanging", type="com.apexinnovations.metadata.events.PageChangingEvent")]
+	</fx:Metadata>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.PageChangingEvent;
+			import com.apexinnovations.transwarp.data.Course;
+			import com.apexinnovations.transwarp.data.Courseware;
+			import com.apexinnovations.transwarp.data.Folder;
+			import com.apexinnovations.transwarp.data.Page;
+			
+			import mx.collections.ArrayList;
+			import mx.collections.IList;
+			import mx.utils.ColorUtil;
+			
+			import spark.events.IndexChangeEvent;
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				levelMenu.tree.addEventListener(IndexChangeEvent.CHANGING, pageChanging);
+				
+				if(!Courseware.instance)
+					parentApplication.addEventListener(PageMetadataEditor.COURSEWARE_INIT, initDataProvider);
+				else
+					initDataProvider();
+			}
+
+			protected function initDataProvider(event:Event = null):void {
+				var data:ArrayList = new ArrayList();
+				for each(var c:Course in Courseware.instance.product.courses)
+					data.addItem(c);
+				levelList.dataProvider = data;
+			}
+
+
+			protected function pageChanging(event:IndexChangeEvent):void {
+				var dataProvider:IList = levelMenu.tree.dataProvider;
+				var obj:Object;
+				if(event.newIndex !== -1)
+					obj = dataProvider.getItemAt(event.newIndex);
+				
+				if(obj is Folder)
+					return;
+									
+				if(!dispatchEvent(new PageChangingEvent(obj as Page, false, true)))
+					event.preventDefault();
+			}
+
+		]]>
+	</fx:Script>
+	
+	
+	<ui:LevelMenu id="levelMenu" height="100%" left="240"/>
+	
+	<s:Group width="250" height="100%">
+		
+		<s:filters>
+			<s:DropShadowFilter blurX="7" blurY="7" distance="7" alpha=".4" />
+			<s:DropShadowFilter blurX="6" blurY="6" angle="225" inner="true" alpha=".25" />
+		</s:filters>
+		
+		<s:Rect width="100%" height="100%" topRightRadiusX="12" bottomRightRadiusX="12">
+			<s:fill>
+				<s:LinearGradient rotation="90" >
+					<s:GradientEntry color="{Courseware.instance.color}" ratio="0.48" />
+					<s:GradientEntry color="{ColorUtil.adjustBrightness2(Courseware.instance.color, -40)}"  />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup width="100%" height="100%">
+			<s:Group width="100%">
+				<s:Rect width="100%" height="130" top="0" topRightRadiusX="12">
+					<s:fill>
+						<s:LinearGradient rotation="270" scaleX="-148">
+							<s:GradientEntry ratio="0" color="#E0E1E2"/>
+							<s:GradientEntry ratio="0.12156863" color="#E2E3E3"/>
+							<s:GradientEntry ratio="0.28235294" color="#E6E6E6"/>
+							<s:GradientEntry ratio="0.43137255" color="#EAEAE9"/>
+							<s:GradientEntry ratio="0.6745098" color="#E6E6E6"/>
+							<s:GradientEntry ratio="0.82745098" color="#DFDFDF"/>
+							<s:GradientEntry ratio="0.95294118" color="#D4D5D6"/>
+							<s:GradientEntry ratio="1" color="#CFD0D0"/>		
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+				<!--Darker Gray bar that serves as background for Next, Prev, Replay etc-->
+				<s:Rect width="100%" height="34" bottom="0">
+					<s:fill>
+						<s:LinearGradient rotation="270" scaleX="-43.4">
+							<s:GradientEntry ratio="0.12941176" color="#4E4D4F"/>
+							<s:GradientEntry ratio="0.14117647" color="#5A5A5C"/>
+							<s:GradientEntry ratio="0.16862745" color="#696A6C"/>
+							<s:GradientEntry ratio="0.19607843" color="#747577"/>
+							<s:GradientEntry ratio="0.22745098" color="#797B7D"/>
+							<s:GradientEntry ratio="0.28235294" color="#7B7D7F"/>
+							<s:GradientEntry ratio="0.55294118" color="#727476"/>
+							<s:GradientEntry ratio="0.63921569" color="#6E6F71"/>
+							<s:GradientEntry ratio="0.75294118" color="#626365"/>
+							<s:GradientEntry ratio="0.87843137" color="#4E4D4F"/>
+						</s:LinearGradient>			
+					</s:fill>
+				</s:Rect>
+				<s:Label text="Select Level" color="0xffffff" bottom="10" fontWeight="bold" fontFamily="Arial" horizontalCenter="0" />
+				<assets:AssetImageControl assetID="logoBig" top="5" horizontalCenter="0" id="logo" />
+			</s:Group>
+			<s:Group width="100%">
+				<s:List id="levelList" selectedItem="@{Courseware.instance.currentCourse}" left="5" right="5" borderVisible="false" contentBackgroundAlpha="0" itemRenderer="com.apexinnovations.metadata.controls.TranswarpEditorLevelListItemRenderer"/>
+			</s:Group>
+		</s:VGroup>
+		
+	</s:Group>
+</s:Group>

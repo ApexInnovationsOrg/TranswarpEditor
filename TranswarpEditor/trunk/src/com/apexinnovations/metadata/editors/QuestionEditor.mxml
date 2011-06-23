@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:ListItemEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						 xmlns:s="library://ns.adobe.com/flex/spark" 
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:metadata="com.apexinnovations.metadata.*" width="100%" xmlns:editors="com.apexinnovations.metadata.editors.*">
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.RemoveItemEvent;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			protected var expandedText:TextEditor;
+			
+			override public function set data(value:XML):void {
+				super.data = value;
+				initializeText();
+			}
+
+			override protected function createChildren():void {
+				super.createChildren();
+				initializeText();
+			}		
+			
+			protected function initializeText():void {
+				if(data) {
+					initializeEditor(questionText, data.query[0]);
+					initializeEditor(answerText, data.answer[0]);
+				}
+			}
+			
+			protected function initializeEditor(editor:TextEditor, markup:XML):void {
+				if(markup && editor)
+					editor.textFlow = TextConverter.importToFlow(markup.*[0], TextConverter.TEXT_LAYOUT_FORMAT);
+			}
+
+			override public function set focus(value:Boolean):void {
+				super.focus = value;
+				if(!focus && expandedText) {
+					expandedText.collapse();
+					expandedText = null;
+				}
+			}
+			
+			protected function textFocusIn(event:FocusEvent):void {
+				if(event.target as TextEditor == null)
+					return;
+				
+				dispatchEvent(new Event(FieldEditor.FOCUS_GAINED));
+				
+				if(expandedText)
+					expandedText.collapse();
+				
+				expandedText = event.target as TextEditor;
+				
+				if(expandedText)
+					expandedText.expand();
+			}
+
+
+			protected function clickHandler(event:MouseEvent):void {
+				dispatchEvent(new Event(FieldEditor.FOCUS_GAINED));
+			}
+
+
+			protected function textFocusOut(editor:TextEditor, field:String):void {
+				data[field][0].setChildren(TextConverter.export(editor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+			}
+			
+			override public function initializeAsNewItem():void {
+				data = <question><query/><answer/></question>;
+			}
+			
+			protected function changeHandler():void {
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" paddingBottom="5" paddingLeft="7" paddingRight="7" paddingTop="5" click="clickHandler(event)">
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="Question:" textAlign="right" width="60" />
+			<editors:TextEditor id="questionText" collapsedHeight="25" focusIn="textFocusIn(event)" focusOut="textFocusOut(questionText, 'query')" width="100%" change="changeHandler()" hasDeleteButton="true" deleteButtonToolTip="Remove This Question" removeItem="dispatchEvent(new RemoveItemEvent(data));"/>
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="Answer:" textAlign="right" width="60" />
+			<editors:TextEditor id="answerText" collapsedHeight="25" focusIn="textFocusIn(event)" focusOut="textFocusOut(answerText, 'answer')" width="100%" change="changeHandler()"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	
+</editors:ListItemEditor>
