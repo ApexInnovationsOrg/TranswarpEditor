@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:FieldEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:metadata="com.apexinnovations.metadata.*"
+					  xmlns:editors="com.apexinnovations.metadata.editors.*"
+					  implements="com.apexinnovations.metadata.editors.IExpandableEditor"
+					  width="100%">
+	
+	<editors:states>
+		<s:State name="collapsed" />
+		<s:State name="expanded" />
+	</editors:states>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.elements.Configuration;
+			import flashx.textLayout.elements.IConfiguration;
+			import flashx.textLayout.elements.TextFlow;
+			import flashx.textLayout.formats.TextLayoutFormat;
+			import flashx.textLayout.formats.WhiteSpaceCollapse;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.binding.utils.ChangeWatcher;
+			import mx.events.StateChangeEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			protected var watcher:ChangeWatcher;
+			
+			protected function setupBinding():void {
+				if(watcher)
+					watcher.unwatch();
+				watcher = BindingUtils.bindSetter(markupChanged, xml, field);
+			}
+			
+			override protected function createChildren():void {
+				super.createChildren();
+			}
+						
+			protected function markupChanged(value:XMLList):void {
+				var config:Configuration = new Configuration();
+				var fmt:TextLayoutFormat = new TextLayoutFormat();
+				fmt.whiteSpaceCollapse = WhiteSpaceCollapse.COLLAPSE;
+				config.textFlowInitialFormat = fmt;				
+				textEditor.textFlow = TextConverter.importToFlow(value[0], TextConverter.TEXT_LAYOUT_FORMAT, config);
+			}
+											
+			override public function set field(value:String):void {
+				super.field = value;
+				if(xml && field)
+					setupBinding();
+			}
+			
+			override public function set xml(value:XML):void {
+				super.xml = value;
+				if(xml && field)
+					setupBinding();
+			}
+			
+			public function commitChanges():void {
+				var node:XML = xml[field][0];
+				if(node)
+					delete node.*;
+				else
+					node = <{field}/>;
+				
+				node.appendChild(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+				xml[field] = node;
+			}
+			
+			public function expand():void {
+				if(currentState == "expanded")
+					return;
+				textEditor.expand();
+				currentState = "expanded"				
+			}
+			
+			public function collapse():void {
+				if(currentState == "collapsed")
+					return;
+				
+				textEditor.collapse();
+				commitChanges();
+				currentState = "collapsed";
+			}
+
+			protected function textEditor_focusInHandler(event:FocusEvent):void {
+				dispatchEvent(new Event(FOCUS_GAINED));
+			}
+
+
+			protected function textChange(event:TextOperationEvent):void {
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+		]]>
+	</fx:Script>
+	
+	<editors:TextEditor id="textEditor" focusIn="textEditor_focusInHandler(event)" focusOut="commitChanges()" change="textChange(event)" left="0" right="-5" height="100%"/>
+	
+</editors:FieldEditor>

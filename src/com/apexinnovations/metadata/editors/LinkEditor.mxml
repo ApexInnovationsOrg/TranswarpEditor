@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:ListItemEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 				 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 				 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%"
+						 xmlns:metadata="com.apexinnovations.metadata.*"
+		 			     click="if(!focus) textArea.setFocus()" xmlns:editors="com.apexinnovations.metadata.editors.*">
+
+	<fx:Metadata>
+		[Event(name="focusGained", type="flash.events.Event")]
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.RemoveItemEvent;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			
+			import spark.events.TextOperationEvent;
+					
+			override public function set data(value:XML):void {
+				super.data = value;
+				initializeTextArea();
+			}
+
+			override protected function createChildren():void {
+				super.createChildren();
+				initializeTextArea();
+			}
+
+			protected function initializeTextArea():void {
+				if(textArea && data)
+					textArea.textFlow = TextConverter.importToFlow(data.children()[0], TextConverter.TEXT_LAYOUT_FORMAT);
+			}
+			
+			protected function focusIn():void {
+				dispatchEvent(new Event(FieldEditor.FOCUS_GAINED));
+			}
+			
+			protected function textAreaFocusIn():void {
+				controlsGroup.enabled = true;
+				focusIn();
+			}
+
+			protected function textAreafocusOut(event:FocusEvent):void {
+				controlsGroup.enabled = false;
+				if(data)
+					data.setChildren(TextConverter.export(textArea.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+			}
+
+			override public function initializeAsNewItem():void {
+				data = <link/>;
+			}			
+			
+
+			protected function changeHandler():void {
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+		]]>
+	</fx:Script>
+
+	
+	<s:VGroup width="100%" paddingTop="8" paddingBottom="8" paddingLeft="8" paddingRight="8">
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="Text:" width="35" textAlign="right"/>
+			<editors:SingleLineTextEditorTextArea width="100%" id="textArea" focusIn="textAreaFocusIn()" focusOut="textAreafocusOut(event)" change="changeHandler()"/>
+			<s:HGroup id="controlsGroup" enabled="false">			
+				<s:ToggleButton width="20" height="20" toolTip="Bold" selected="@{textArea.bold}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_bold.png')"/>
+				<s:ToggleButton width="20" height="20" toolTip="Italic" selected="@{textArea.italic}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_italic.png')"/>
+				<s:ToggleButton width="20" height="20" toolTip="Strikethrough" selected="@{textArea.strikethrough}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_strikethrough.png')"/>
+				<s:ToggleButton width="20" height="20" toolTip="Superscript" selected="@{textArea.superscript}" tabFocusEnabled="false" mouseFocusEnabled="false"  icon="@Embed('/assets/superscript_icon.png')"/>
+				<s:ToggleButton width="20" height="20" toolTip="Subscript" selected="@{textArea.subscript}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/subscript_icon.png')"/>
+				<mx:ColorPicker id="colorPicker"  toolTip="Font Color" selectedColor="@{textArea.color}" mouseFocusEnabled="false" tabFocusEnabled="false"/>
+			</s:HGroup>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">		
+			<s:Label text="URL:" width="35" textAlign="right"/>
+			<s:TextInput width="100%" focusIn="focusIn()" text="@{_data.@url}" change="changeHandler()"/>
+			<s:Group width="{controlsGroup.width}">
+				<s:Button label="Remove" toolTip="Remove this Link" click="dispatchEvent(new RemoveItemEvent(data));" icon="@Embed('/assets/remove_icon.png')" />
+			</s:Group>
+		</s:HGroup>
+	</s:VGroup>
+	
+</editors:ListItemEditor>

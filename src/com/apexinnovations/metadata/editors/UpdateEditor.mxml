@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:ListItemEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx"
+						  xmlns:metadata="com.apexinnovations.metadata.*"
+						  width="100%" xmlns:editors="com.apexinnovations.metadata.editors.*">
+	 
+	 <fx:Script>
+		 <![CDATA[
+			 import com.apexinnovations.metadata.events.RemoveItemEvent;
+			 import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			 
+			 import flashx.textLayout.conversion.ConversionType;
+			 import flashx.textLayout.conversion.TextConverter;
+			 
+			 import mx.events.CalendarLayoutChangeEvent;
+			 import mx.formatters.DateFormatter;
+			 
+			 import spark.events.TextOperationEvent;
+			 
+			 protected var formatter:DateFormatter;
+			 
+			 override protected function createChildren():void {
+				 super.createChildren();
+				 
+				 formatter = new DateFormatter();
+				 formatter.formatString = "YYYY-MM-DDTJJ:NN:SS";
+				 
+				 initializeTextArea();
+			 }
+			 
+			 override public function set data(value:XML):void {
+				 super.data = value;
+				 initializeTextArea();
+			 }
+			 
+			 protected function descriptionChange(event:TextOperationEvent):void	{
+				 //data.setChildren(TextInput(event.target).text);	
+			 }
+			 
+			 protected function dateChanged(event:CalendarLayoutChangeEvent):void {
+				 data.@time = formatter.format(event.newDate);
+				 changeHandler();
+			 }			 
+			 
+			 protected function removeUpdate():void {
+				 dispatchEvent(new RemoveItemEvent(_data));
+			 }
+			 
+			 override public function initializeAsNewItem():void {
+				 var now:String = formatter.format(new Date());
+				 
+				 data = <update time={now} />;
+			 }
+			 
+			 protected function focusIn():void {
+				 dispatchEvent(new Event(FieldEditor.FOCUS_GAINED));
+			 }
+			 
+			 protected function focusOut(event:FocusEvent):void {
+				 if(data)
+					 data.setChildren(TextConverter.export(descriptionText.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+			 }
+			 
+			 protected function initializeTextArea():void {
+				 if(data && descriptionText)
+					 descriptionText.textFlow = TextConverter.importToFlow(data.children()[0], TextConverter.TEXT_LAYOUT_FORMAT);
+			 }
+			 
+			 override public function set focus(value:Boolean):void {
+				 super.focus = value;
+				 if(focus)
+					 descriptionText.expand();
+				 else
+					 descriptionText.collapse();
+			 }
+			 
+			 protected function changeHandler():void {
+				 dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));				 
+			 }
+			 
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" click="dispatchEvent(new Event(FieldEditor.FOCUS_GAINED))" paddingBottom="4" paddingLeft="7" paddingRight="7" paddingTop="4">
+		<s:HGroup width="100%" verticalAlign="middle" gap="10">
+			<s:Label text="Description:" width="75" textAlign="right" />
+			<editors:TextEditor id="descriptionText" collapsedHeight="25" width="100%" focusIn="focusIn()" focusOut="focusOut(event)" change="changeHandler()"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="10" width="100%">
+			<s:Label text="Date:" width="75" textAlign="right" />
+			<mx:DateField selectedDate="{DateFormatter.parseDateString(_data.@time)}" change="dateChanged(event)" open="focusIn()"/>		
+			<s:Button label="Remove" toolTip="Remove This Update" click="removeUpdate()" icon="@Embed('/assets/remove_icon.png')"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	
+</editors:ListItemEditor>

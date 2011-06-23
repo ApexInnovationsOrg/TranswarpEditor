@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:metadata="com.apexinnovations.metadata.*" 
+		 keyDown="keyDown(event)" xmlns:controls="com.apexinnovations.metadata.controls.*">
+
+	
+	<fx:Declarations>
+		<s:TitleWindow title="Markup" id="markupWindow" close="PopUpManager.removePopUp(markupWindow)" width="400" height="400">
+			<s:layout>
+				<s:VerticalLayout horizontalAlign="center" paddingBottom="20" gap="20"/>
+			</s:layout>
+			<s:TextArea id="markupText" height="100%" width="100%"/>
+			<s:HGroup>
+				<s:Button label="Okay" />
+				<s:Button label="Cancel" click="PopUpManager.removePopUp(markupWindow)" />
+			</s:HGroup>
+		</s:TitleWindow>
+		
+		<s:TitleWindow id="linkWindow" title="Link" close="PopUpManager.removePopUp(linkWindow); textArea.setFocus();" >
+			<s:layout>
+				<s:VerticalLayout horizontalAlign="center" paddingBottom="20" paddingTop="20" paddingLeft="20" paddingRight="20" />
+			</s:layout>
+			<s:HGroup verticalAlign="middle">
+				<s:Label text="URL:"/>
+				<s:TextInput id="linkText" width="400" focusIn="linkText.selectAll();" doubleClick="linkText.selectAll();" enter="applyLink()"/>
+			</s:HGroup>
+			<s:Label fontSize="11" text="Tip: Leave the URL field blank to remove an existing link" />
+			<s:HGroup paddingTop="10">
+				<s:Button label="Okay" click="applyLink()" />
+				<s:Button label="Cancel" click="PopUpManager.removePopUp(linkWindow); textArea.setFocus();" />				
+			</s:HGroup>
+		</s:TitleWindow>
+		
+	</fx:Declarations>
+	
+	<fx:Metadata>
+		[Event(name="focusIn", type="flash.events.FocusEvent")]
+		[Event(name="focusOut", type="flash.events.FocusEvent")]
+		[Event(name="change", type="spark.events.TextOperationEvent")]
+		[Event(name="removeItem", type="com.apexinnovations.metadata.events.RemoveItemEvent")]
+	</fx:Metadata>
+	
+	<s:states>
+		<s:State name="collapsed" />
+		<s:State name="expanded" />
+	</s:states>
+	
+	<s:transitions>
+		<s:Transition toState="expanded" autoReverse="false">				
+			<s:Sequence effectEnd="{expanding = false}">
+				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+				<s:Resize target="{textAreaHolder}" duration="300" id="expandResize" widthBy="0"/>
+				<s:Fade target="{controlsGroup}" duration="300" alphaFrom="0" alphaTo="1" />
+				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+			</s:Sequence>
+		</s:Transition>
+		<s:Transition toState="collapsed" autoReverse="false">				
+			<s:Sequence>
+				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+				<s:Resize target="{textAreaHolder}" duration="300"/>
+				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+			</s:Sequence>
+		</s:Transition>
+	</s:transitions>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.RemoveItemEvent;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.elements.TextFlow;
+			import flashx.textLayout.events.CompositionCompleteEvent;
+			import flashx.textLayout.formats.TextAlign;
+			
+			import mx.collections.IList;
+			import mx.managers.PopUpManager;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			
+			[Bindable] public var collapsedHeight:Number = 35;	
+			[Bindable] public var hasDeleteButton:Boolean = false;
+			[Bindable] public var deleteButtonToolTip:String = "";
+			
+			[Embed(source="/assets/link_icon.png")]	protected const linkIcon:Class;
+			[Embed(source="/assets/blue_link_icon.png")] protected const blueLinkIcon:Class;			
+			
+			protected var keyboardShortcuts:Object = {
+				66 : {type: "toggle", field: "bold", ctrl: true}, 							// CTRL + B
+				85 : {type: "toggle", field: "underline", ctrl: true}, 						// CTRL + U
+				73 : {type: "toggle", field: "italic", ctrl: true}, 						// CTRL + I
+				
+				76 : {type: "set", field: "align", value: TextAlign.LEFT, ctrl: true}, 		// CTRL + L
+				69 : {type: "set", field: "align", value: TextAlign.CENTER, ctrl: true},	// CTRL + E
+				82 : {type: "set", field: "align", value: TextAlign.RIGHT, ctrl: true},		// CTRL + R
+				74 : {type: "set", field: "align", value: TextAlign.JUSTIFY, ctrl: true}	// CTRL + J
+			};
+			
+			[Bindable]
+			protected var fontSizes:ArrayList = new ArrayList([6,8,10,12,13,14,15,16,17,18,19,20,24,28,32,48,64,128]);
+			
+			protected function keyDown(e:KeyboardEvent):void {
+				//trace(e.keyCode);
+				
+				var info:Object = keyboardShortcuts[e.keyCode];
+				
+				if(!info)
+					return;
+				//Ensure that alt, ctrl and shift have a value 
+				info.alt = info.alt === undefined ? false : info.alt;
+				info.ctrl = info.ctrl === undefined ? false : info.ctrl;
+				info.shift = info.shift === undefined ? false : info.shift;
+							
+				if(info.ctrl != e.ctrlKey || info.alt != e.altKey || info.shift != e.shiftKey)
+					return;					
+				
+				switch(info.type) {
+					case "toggle" :
+						textArea[info.field] = !textArea[info.field];
+						break;
+					case "set" :
+						textArea[info.field] = info.value;
+				}
+			}
+			
+			public function openMarkupWindow():void {
+				PopUpManager.addPopUp(markupWindow, this, true);
+				PopUpManager.centerPopUp(markupWindow);
+				markupText.text = TextConverter.export(textArea.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE).toXMLString();
+			}
+			
+			protected function updateAlignBar(value:String):int {
+				var items:IList = alignBar.dataProvider;
+				var n:int = items.length;
+				for(var i:int=0; i<n; i++) {
+					if(items.getItemAt(i).value == value) {						
+						return i;
+					}
+				}
+				return -1;
+			}
+			
+			protected function alignChanged(value:String):void {
+				if(!alignBar)
+					return;
+				
+				var items:IList = alignBar.dataProvider;
+				var n:int = items.length;
+				for(var i:int=0; i<n; i++) {
+					if(items.getItemAt(i).value == value) {						
+						alignBar.selectedIndex = i;
+						break;
+					}
+				}
+			}
+			
+			public function get textFlow():TextFlow {
+				return textArea.textFlow;
+			}
+			
+			public function set textFlow(value:TextFlow):void {
+				textArea.textFlow = value;
+			}
+
+			protected function getListStyleSelection(type:String):int {
+				var data:IList = listStyleComboBox.dataProvider
+				for(var i:int = 0; i < data.length; ++i) {
+					if(type == data.getItemAt(i).value)
+						return i;
+				}
+				return -1;
+			}
+			
+
+			protected function listStyleComboBox_changeHandler(event:IndexChangeEvent):void {
+				if(event.newIndex != -1)
+					textArea.listStyleType = (event.target as DropDownList).dataProvider.getItemAt(event.newIndex).value;
+			} 
+
+
+			protected function focusInOut(event:FocusEvent):void {
+				dispatchEvent(event);
+			}
+			
+			
+									
+			protected function openLinkWindow():void {
+				PopUpManager.addPopUp(linkWindow, this, true);
+				PopUpManager.centerPopUp(linkWindow);
+				linkText.text = textArea.link;
+				linkText.setFocus();
+			}
+			
+			protected function applyLink():void {
+				textArea.link = linkText.text;
+				PopUpManager.removePopUp(linkWindow);
+				textArea.setFocus();
+			}
+			
+			protected var expandWaitingForCompose:Boolean = false;
+			protected var expanding:Boolean = false;
+			
+			public function expand():void {
+				if(currentState == "expanded")
+					return;
+				
+				textFlow.addEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
+				textFlow.flowComposer.composeToPosition();
+				flowComposeComplete();
+				expanding = true;
+				currentState = "expanded"
+			}
+			
+			public function collapse():void {
+				if(currentState == "collapsed")
+					return;
+				currentState = "collapsed";
+				textFlow.removeEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
+			}
+			
+			
+			[Bindable] protected var _measuredTextHeight:Number;
+			
+			
+			protected function flowComposeComplete(event:CompositionCompleteEvent = null):void {
+				if(expanding)
+					return;
+				_measuredTextHeight = textFlow.flowComposer.getControllerAt(0).getContentBounds().height + 20;				
+			}
+
+			protected function textChange(event:TextOperationEvent):void {
+				dispatchEvent(event);
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:HGroup id="textAreaHolder" width="100%" top="0" bottom="31" bottom.collapsed="0" height.collapsed="{collapsedHeight}" height.expanded="{_measuredTextHeight}">
+		<controls:TextEditorTextArea width="100%" height="100%" id="textArea" focusIn="focusInOut(event)" focusOut="focusInOut(event)" change="textChange(event)" verticalScrollPolicy.collapsed="off" horizontalScrollPolicy="off" skinClass="com.apexinnovations.metadata.skins.TextEditorTextAreaSkin"/>
+		<s:Button toolTip="{deleteButtonToolTip}" width="{hasDeleteButton ? 20 : 0}" height="{hasDeleteButton ? 20 : 0}" visible="{hasDeleteButton}" click="dispatchEvent(new RemoveItemEvent(null))" icon="@Embed('/assets/remove_icon.png')" />
+	</s:HGroup>
+	
+	<s:HGroup id="controlsGroup" bottom="0" visible.collapsed="false" maxHeight.collapsed="0" width="100%" verticalAlign="middle">	
+		
+		<s:ToggleButton width="20" height="20" toolTip="Bold" selected="@{textArea.bold}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_bold.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="Underline"  selected="@{textArea.underline}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_underline.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="Italic" selected="@{textArea.italic}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_italic.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="Strikethrough" selected="@{textArea.strikethrough}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_strikethrough.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="Superscript" selected="@{textArea.superscript}" tabFocusEnabled="false" mouseFocusEnabled="false"  icon="@Embed('/assets/superscript_icon.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="Subscript" selected="@{textArea.subscript}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/subscript_icon.png')"/>
+		<s:ToggleButton width="20" height="20" toolTip="List" selected="@{textArea.list}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_bullet.png')"/>			
+	
+		<s:Button width="20" height="20" toolTip="Link" click="openLinkWindow()" tabFocusEnabled="false" mouseFocusEnabled="false" icon="{textArea.link != '' ? blueLinkIcon : linkIcon}" />
+	
+		<controls:ButtonBarWithTooltip id="alignBar" requireSelection="true" width="88" toolTipField="toolTip" change="textArea.align = alignBar.selectedItem.value;" selectedIndex="{updateAlignBar(textArea.align)}" tabFocusEnabled="false" mouseFocusEnabled="false">
+			<s:ArrayList>
+				<fx:Object toolTip="Left" label="" value="{TextAlign.LEFT}" icon="@Embed('assets/icon_align_left.png')" />
+				<fx:Object toolTip="Center" label="" value="{TextAlign.CENTER}" icon="@Embed('assets/icon_align_center.png')" />
+				<fx:Object toolTip="Right" label="" value="{TextAlign.RIGHT}" icon="@Embed('assets/icon_align_right.png')" />
+				<fx:Object toolTip="Justify" label="" value="{TextAlign.JUSTIFY}" icon="@Embed('assets/icon_align_justify.png')" />
+			</s:ArrayList>
+		</controls:ButtonBarWithTooltip>
+		
+		<!--<s:ComboBox id="fontFamilyBox" labelField="fontName" selectedItem="@{textArea.fontFamily}" dataProvider="{new ArrayList(Font.enumerateFonts(true))}" tabFocusEnabled="false" mouseFocusEnabled="false"/>-->
+		
+		<s:ComboBox id="fontSizeBox" width="50" toolTip="Font Size" selectedItem="@{textArea.fontSize}" dataProvider="{fontSizes}" tabFocusEnabled="false" mouseFocusEnabled="false"/>
+		
+		<mx:ColorPicker id="colorPicker"  toolTip="Font Color" selectedColor="@{textArea.color}" tabFocusEnabled="false" mouseFocusEnabled="false"/>
+		
+		<s:Label text="List Style: " alpha="{textArea.list ? 1 : 0.5}"/>
+		
+		<s:DropDownList labelField="label" id="listStyleComboBox" toolTip="List Style" width="120" enabled="{textArea.list}" change="listStyleComboBox_changeHandler(event)" selectedIndex="{getListStyleSelection(textArea.listStyleType)}">
+			<s:ArrayList>
+				<fx:Object label="• Disc" value="disc" />
+				<fx:Object label="◦ Circle" value="circle" />
+				<fx:Object label="  None" value="none" />
+				<fx:Object label="■ Square" value="square" />
+				<fx:Object label="◆ Diamond" value="diamond" />
+				<fx:Object label="□ Box" value="box" />
+				<fx:Object label="- Hypen" value="hyphen" />
+				<fx:Object label="✓ Check" value="check" />
+				<fx:Object label="1. Decimal" value="decimal" />
+				<fx:Object label="01. DecimalLZ" value="decimalLeadingZero" />					
+				<fx:Object label="A. Upper Alpha" value="upperAlpha" />
+				<fx:Object label="a. Lower Alpha" value="lowerAlpha" />
+				<fx:Object label="I. Upper Roman" value="upperRoman" />
+				<fx:Object label="i. Lower Roman" value="lowerRoman" />					
+			</s:ArrayList>
+		</s:DropDownList>
+	
+		<s:Button toolTip="View Markup" click="openMarkupWindow()" tabFocusEnabled="false" mouseFocusEnabled="false" width="22" icon="@Embed('/assets/view_icon.png')"/>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:metadata="com.apexinnovations.metadata.*"
+		 xmlns:editors="com.apexinnovations.metadata.editors.*"
+		 width="100%" height="100%" xmlns:ui="com.apexinnovations.transwarp.ui.*">
+
+	<fx:Metadata>
+		[Event(name="savePage", type="flash.events.Event")]		
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.editors.FieldEditor;
+			import com.apexinnovations.metadata.editors.IExpandableEditor;
+			import com.apexinnovations.metadata.editors.LinkEditor;
+			import com.apexinnovations.metadata.editors.QuestionEditor;
+			import com.apexinnovations.metadata.editors.UpdateEditor;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.conversion.TextConverter;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.events.StateChangeEvent;
+			protected var _page:XML;
+			
+			protected var currentFocus:FieldEditor;
+			
+			protected var _madeChanges:Boolean = false;
+
+			[Bindable] 
+			public function get madeChanges():Boolean { return _madeChanges; }
+			protected function set madeChanges(value:Boolean):void	{_madeChanges = value;}
+			
+			public static const SAVE_PAGE:String = "savePage";
+			
+			[Bindable]
+			public function get page():XML { return _page; }
+			public function set page(value:XML):void {
+				madeChanges = false;
+				_page = value;
+			}			
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				for(var i:int=0; i < fieldGroup.numElements; ++i) {
+					var field:FieldEditor = fieldGroup.getElementAt(i) as FieldEditor;
+					if(field) {
+						BindingUtils.bindProperty(field, "xml", this, "page");
+						//field.backgroundColor = (i % 2) ? 0xeeeeff : 0xccccff;
+						field.addEventListener(FieldEditor.FOCUS_GAINED, updateFocus);
+						field.addEventListener(TranswarpEditorEvent.FIELD_VALUE_CHANGE, fieldChanged);
+					}
+				}				
+			}
+			
+
+			protected function updateFocus(event:Event = null):void {
+				if(event && event.target == currentFocus) //Ignore duplicate focus events 
+					return;
+				
+				if(currentFocus && currentFocus is IExpandableEditor)
+					IExpandableEditor(currentFocus).collapse();
+				
+				currentFocus = event ? event.target as FieldEditor : null;
+				
+				if(currentFocus && currentFocus is IExpandableEditor)
+					IExpandableEditor(currentFocus).expand();
+			}
+
+			protected function revertChanges():void {
+				
+			}
+			
+			protected function fieldChanged(event:Event):void {
+				madeChanges = true;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="10" horizontalAlign="center" paddingTop="30" paddingBottom="10" paddingLeft="0" paddingRight="0" clipAndEnableScrolling="true" />
+	</s:layout>
+	
+	<ui:PageTitle fontSize="20" />
+	
+	<s:Scroller width="100%" height="100%" verticalScrollPolicy="auto">
+		<s:VGroup id="fieldGroup" gap="0" horizontalCenter="0" width="100%" paddingRight="2">
+			<editors:SimpleFieldEditor label="Page Title" field="@name"/>
+			<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
+			<editors:TextFlowFieldEditor label="Instructions" field="instructions"/>
+			<editors:TextFlowFieldEditor label="Supporting Text" field="supportText" />
+			<editors:TextFlowFieldEditor label="Description" field="description" />
+			<editors:TextFlowFieldEditor label="Transcript" field="transcript" />
+			<editors:ListFieldEditor label="Key Questions" field="questions" itemLabel="Question" itemClass="{QuestionEditor}"/>
+			<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
+			<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>	
+		</s:VGroup>		
+	</s:Scroller>
+	<s:HGroup>	
+		<!--<s:Button label="test" click="updateFocus(); trace(_page.toXMLString());" />-->
+		<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />
+		<s:Button label="Save" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE)); madeChanges = false;" />
+	</s:HGroup>
+
+</s:Group>

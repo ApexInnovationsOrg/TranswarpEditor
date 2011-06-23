@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" verticalCenter="0">
+	
+	<fx:Metadata>
+		[Event(name="fileSelection", type="com.apexinnovations.metadata.events.FileSelectionEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.FileSelectionEvent;
+			
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.managers.DragManager;
+			
+			
+			[Bindable] public var defaultPath:String;
+			
+			protected function browseForFile(event:MouseEvent):void {
+				var file:File = new File();
+				//file.browseForOpen("Select a page to Edit", [new FileFilter("Xml File", "*.xml")]);
+				file.browseForDirectory("Select your repository directory");
+				file.addEventListener(Event.SELECT, fileSelected);
+			}
+			
+			protected function fileSelected(event:Event):void {
+				var file:File = event.target as File;
+				if(!file) return;
+				filePath.text = file.nativePath;
+			}			
+			
+			
+			protected function openSelection(event:MouseEvent):void {
+				try {
+					var file:File = new File(filePath.text);
+					if(file.exists) {
+						dispatchEvent(new FileSelectionEvent(file));
+					} else {	
+						Alert.show("Directory does not exist!", "Error");
+						return;
+					}					
+				} catch(e:Error) {
+					Alert.show("Invalid directory path\n" + e, "Error");
+				}
+			}
+						
+		]]>
+	</fx:Script>
+
+	
+	<s:layout>
+		<s:VerticalLayout verticalAlign="middle" horizontalAlign="center"/>
+	</s:layout>
+
+	<s:Label text="Select your repository location:" fontSize="20" />
+	<s:HGroup verticalAlign="middle">
+		<s:TextInput id="filePath" text="{defaultPath}" width="400"/>
+		<s:Button id="browseButton" label="Browse" click="browseForFile(event)" />
+	</s:HGroup>
+	<s:Button id="openButton" label="Okay" click="openSelection(event)" />
+
+	
+</s:Group>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				dataChange="dataChangeHandler(event)" xmlns:tree="com.apexinnovations.transwarp.ui.tree.*"
+				height="26">
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.transwarp.data.Course;
+			import com.apexinnovations.transwarp.data.Courseware;
+			import com.apexinnovations.transwarp.data.Folder;
+			import com.apexinnovations.transwarp.data.Page;
+			import com.apexinnovations.transwarp.utils.TranswarpVersion;
+			
+			import flash.text.engine.FontPosture;
+			import flash.text.engine.FontWeight;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.events.FlexEvent;
+			import mx.utils.ColorUtil;
+			
+			import spark.components.List;
+			
+			protected function dataChangeHandler(event:FlexEvent):void {
+				var course:Course = data as Course;
+				if(course) {
+					labelDisplay.text = course.levelRoman + ' ' + course.name;
+				}
+				
+			}
+
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+	</s:states>
+	
+	
+	<s:Rect width="100%" top="-1" bottom="0" radiusX="3">
+		<s:fill>
+			<s:SolidColor color="0xffffff" alpha.hovered="0.5" alpha.selected="1" alpha="0" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Line left="4" right="4" bottom="0">
+		<s:stroke>
+			<s:SolidColorStroke color="0xffffff" weight="1" /> 
+		</s:stroke>
+	</s:Line>
+	
+	<s:Label id="labelDisplay" color="0xffffff" color.selected="{Courseware.instance.color}" fontWeight="bold" fontFamily="Arial" fontSize="13" left="20" verticalCenter="0"/>
+	
+	
+</s:ItemRenderer>
+

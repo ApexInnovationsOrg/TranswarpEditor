@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" verticalCenter="0">
+	
+	<fx:Metadata>
+		[Event(name="fileSelection", type="com.apexinnovations.metadata.events.FileSelectionEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.FileSelectionEvent;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.managers.DragManager;
+				
+			
+			protected function browseForFile(event:MouseEvent):void {
+				var file:File = new File();
+				file.browseForOpen("Select a page to Edit", [new FileFilter("Xml File", "*.xml")]);
+				file.addEventListener(Event.SELECT, fileSelected);
+			}
+			
+			protected function fileSelected(event:Event):void {
+				var file:File = event.target as File;
+				if(!file) return;
+				filePath.text = file.nativePath;
+			}
+			
+			
+			protected function nativeDragDrop(event:NativeDragEvent):void {
+				NativeDragManager.dropAction = DragManager.LINK;
+				
+				var fileList:Array = event.clipboard.getData(ClipboardFormats.FILE_LIST_FORMAT) as Array
+				var file:File = fileList[0] as File;
+				
+				if(fileList.length > 1)
+					Alert.show("No more than one file is supported at at time.  Only the first (" + file.name + ") will be used","Too Many Files");
+				
+				filePath.text = file.nativePath;
+			}
+			
+			protected function nativeDragEnter(event:NativeDragEvent):void {
+				var fileList:Array = event.clipboard.getData(ClipboardFormats.FILE_LIST_FORMAT) as Array
+				var file:File = fileList[0] as File;
+				
+				if(!file) return;		
+				
+				NativeDragManager.acceptDragDrop(InteractiveObject(event.target));
+				DragManager.showFeedback(DragManager.LINK);
+			}
+			
+			
+			
+			protected function openSelection(event:MouseEvent):void 	{
+				try {
+					var file:File = new File(filePath.text);
+					if(!file.exists) {
+						Alert.show("File does not exist", "Error");
+						return;
+					}
+					
+					file.addEventListener(Event.COMPLETE, function(event:Event):void { fileLoaded(event); });  //I have absolutely not idea why, but without this line, the following line doesn't work;	
+					//file.addEventListener(Event.COMPLETE, fileLoaded);
+					file.addEventListener(IOErrorEvent.IO_ERROR, fileLoadError);
+					
+					file.load();
+					openButton.enabled = false;
+					
+				} catch(e:Error) {
+					Alert.show("Invalid file path\n" + e, "Error");
+				}
+			}
+			
+			
+			protected function fileLoaded(event:Event):void {
+				var file:File = event.target as File;
+				dispatchEvent(new FileSelectionEvent(file));
+				openButton.enabled = true;
+			}
+			
+			protected function fileLoadError(event:Event):void {
+				Alert.show("Error loading file \n" + event, "IOError");
+				openButton.enabled = true;
+			}
+			
+		]]>
+	</fx:Script>
+
+	
+	<s:layout>
+		<s:VerticalLayout verticalAlign="middle" horizontalAlign="center"/>
+	</s:layout>
+
+	<s:HGroup verticalCenter="0" horizontalCenter="0" verticalAlign="middle" 
+			  nativeDragDrop="nativeDragDrop(event)" 
+			  nativeDragEnter="nativeDragEnter(event)">
+		<s:Label text="Select a file..." />
+		<s:TextInput id="filePath" width="400"/>
+		<s:Button id="browseButton" label="Browse" click="browseForFile(event)" />
+	</s:HGroup>
+	<s:Button id="openButton" label="Open" click="openSelection(event)" />
+
+	
+</s:Group>
