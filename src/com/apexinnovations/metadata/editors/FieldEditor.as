@@ -15,7 +15,8 @@ package com.apexinnovations.metadata.editors {
 		public static const FOCUS_GAINED:String = "focusGained";
 		
 		protected var _field:String;
-		protected var _xml:XML;
+		
+		[Bindable] protected var _xml:XML;
 		
 		[SkinPart(required="true")]
 		public var labelDisplay:Label;

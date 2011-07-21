@@ -76,7 +76,7 @@
 			}
 
 			protected function revertChanges():void {
-				
+				//TODO: Uh, yeah
 			}
 			
 			protected function fieldChanged(event:Event):void {
@@ -95,6 +95,8 @@
 	<s:Scroller width="100%" height="100%" verticalScrollPolicy="auto">
 		<s:VGroup id="fieldGroup" gap="0" horizontalCenter="0" width="100%" paddingRight="2">
 			<editors:SimpleFieldEditor label="Page Title" field="@name"/>
+			<editors:AdminSettingsEditor/>
+			<editors:ConfigEditor/>
 			<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
 			<editors:SimpleFieldEditor label="SWF" field="@swf" />
 			<editors:TextFlowFieldEditor label="Instructions" field="instructions"/>
@@ -108,7 +110,7 @@
 	</s:Scroller>
 	<s:HGroup>	
 		<!--<s:Button label="test" click="updateFocus(); trace(_page.toXMLString());" />-->
-		<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />
+		<!--<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />-->
 		<s:Button label="Save" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE)); madeChanges = false;" />
 	</s:HGroup>
 	<s:Group width="100%">
