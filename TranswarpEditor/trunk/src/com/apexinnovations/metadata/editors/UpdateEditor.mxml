@@ -20,6 +20,8 @@
 			 
 			 protected var formatter:DateFormatter;
 			 
+			 protected var _hiddenUpdate:Boolean;
+			 
 			 override protected function createChildren():void {
 				 super.createChildren();
 				 
@@ -32,6 +34,7 @@
 			 override public function set data(value:XML):void {
 				 super.data = value;
 				 initializeTextArea();
+				 hiddenUpdate = data.@hidden == "true";
 			 }
 			 
 			 protected function descriptionChange(event:TextOperationEvent):void	{
@@ -42,6 +45,15 @@
 				 data.@time = formatter.format(event.newDate);
 				 changeHandler();
 			 }			 
+			 
+			 [Bindable] protected function get hiddenUpdate():Boolean {
+				 return _hiddenUpdate;
+			 }
+			 
+			 protected function set hiddenUpdate(value:Boolean):void {
+				 _hiddenUpdate = value;
+				 data.@hidden = value;
+			 }
 			 
 			 protected function removeUpdate():void {
 				 dispatchEvent(new RemoveItemEvent(_data));
@@ -89,7 +101,7 @@
 		<s:HGroup verticalAlign="middle" gap="10" width="100%">
 			<s:Label text="Date:" width="75" textAlign="right" />
 			<mx:DateField selectedDate="{DateFormatter.parseDateString(_data.@time)}" change="dateChanged(event)" open="focusIn()"/>		
-			<s:CheckBox label="Hidden Update" selected="{_data.@hidden}" />
+			<s:CheckBox label="Hidden Update" selected="@{hiddenUpdate}" />
 			<s:Button label="Remove" toolTip="Remove This Update" click="removeUpdate()" icon="@Embed('/assets/remove_icon.png')"/>
 		</s:HGroup>
 	</s:VGroup>
