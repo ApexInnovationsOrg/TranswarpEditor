@@ -89,6 +89,7 @@
 		<s:HGroup verticalAlign="middle" gap="10" width="100%">
 			<s:Label text="Date:" width="75" textAlign="right" />
 			<mx:DateField selectedDate="{DateFormatter.parseDateString(_data.@time)}" change="dateChanged(event)" open="focusIn()"/>		
+			<s:CheckBox label="Hidden Update" selected="{_data.@hidden}" />
 			<s:Button label="Remove" toolTip="Remove This Update" click="removeUpdate()" icon="@Embed('/assets/remove_icon.png')"/>
 		</s:HGroup>
 	</s:VGroup>

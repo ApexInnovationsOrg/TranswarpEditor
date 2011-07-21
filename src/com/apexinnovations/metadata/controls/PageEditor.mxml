@@ -9,6 +9,11 @@
 	<fx:Metadata>
 		[Event(name="savePage", type="flash.events.Event")]		
 	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.transwarp.data.Courseware;
+		]]>
+	</fx:Script>
 	
 	<fx:Script>
 		<![CDATA[
@@ -91,13 +96,14 @@
 		<s:VGroup id="fieldGroup" gap="0" horizontalCenter="0" width="100%" paddingRight="2">
 			<editors:SimpleFieldEditor label="Page Title" field="@name"/>
 			<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
+			<editors:SimpleFieldEditor label="SWF" field="@swf" />
 			<editors:TextFlowFieldEditor label="Instructions" field="instructions"/>
 			<editors:TextFlowFieldEditor label="Supporting Text" field="supportText" />
 			<editors:TextFlowFieldEditor label="Description" field="description" />
 			<editors:TextFlowFieldEditor label="Transcript" field="transcript" />
 			<editors:ListFieldEditor label="Key Questions" field="questions" itemLabel="Question" itemClass="{QuestionEditor}"/>
 			<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
-			<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>	
+			<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>
 		</s:VGroup>		
 	</s:Scroller>
 	<s:HGroup>	
@@ -105,5 +111,7 @@
 		<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />
 		<s:Button label="Save" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE)); madeChanges = false;" />
 	</s:HGroup>
-
+	<s:Group width="100%">
+		<s:Label right="10" text="{Courseware.instance.currentPage.id}" color="0xaaaaaa" />
+	</s:Group>
 </s:Group>
