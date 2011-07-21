@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<metadata:MetadataEditorBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 						  xmlns:s="library://ns.adobe.com/flex/spark" 
 					      xmlns:mx="library://ns.adobe.com/flex/mx"
 						  xmlns:metadata="com.apexinnovations.metadata.*"
@@ -7,11 +7,11 @@
 						  minWidth="1280" minHeight="720"
 						  closing="closingHandler(event)"
 						  creationComplete="creationCompleteHandler(event)">
-	<metadata:states>
+	<s:states>
 		<s:State name="default"/>
 		<s:State name="loading" />
 		<s:State name="editing" />
-	</metadata:states>
+	</s:states>
 	
 	<fx:Script>
 		<![CDATA[
@@ -250,4 +250,4 @@
 		<controls:ProductBrowser pageChanging="pageChangingHandler(event)"/>
 		<controls:PageEditor id="editor" page="{currentPageData}" savePage="savePageHandler(event)"/>
 	</s:HGroup>
-</metadata:MetadataEditorBase>
+</s:WindowedApplication>
