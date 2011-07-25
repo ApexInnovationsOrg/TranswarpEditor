@@ -8,10 +8,12 @@
 		<![CDATA[
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
 			protected var _timeline:Boolean;
+			protected var _demo:Boolean;
 			
 			override public function set xml(value:XML):void {
 				super.xml = value;
-				_timeline = value ? value.@timeline == "true" : false;
+				timeline = value ? value.@timeline == "true" : false;
+				demo = value ? value.@demo == "true" : false
 			}
 			
 			[Bindable] protected function get timeline():Boolean { return _timeline; }
@@ -22,6 +24,12 @@
 			
 			protected function changeHandler():void {
 				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+			
+			[Bindable] protected function get demo():Boolean { return _demo; }
+			protected function set demo(value:Boolean):void { 
+				_demo = value;
+				xml.@demo = value;
 			}
 			
 		]]>
@@ -39,5 +47,6 @@
 		<s:Label text="Audio:" paddingTop="2.5"/>
 		<s:TextInput text="@{_xml.@audio}" width="100%" change="changeHandler()" />
 		<s:CheckBox label="Timeline" selected="@{timeline}" />
+		<s:CheckBox label="Demo" selected="@{demo}" change="changeHandler()" />
 	</s:HGroup>
 </editors:FieldEditor>

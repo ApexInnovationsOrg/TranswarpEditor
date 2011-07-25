@@ -9,14 +9,23 @@
 			
 			
 			protected function changeHandler():void {
+				if(config.text != _xml.@config)
+					dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+			
+			protected function configTypeChangeHandler():void {
+				if(configType.selectedItem == _xml.@configType)
+					return;
+				
 				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+				_xml.@configType = configType.selectedItem;
 			}
 			
 			override public function set xml(value:XML):void {
 				super.xml = value;
 				if(!value)
 					return;
-				configtype.selectedItem = String(_xml.@configType);
+				configType.selectedItem = String(_xml.@configType);
 			}
 		]]>
 	</fx:Script>
@@ -29,9 +38,9 @@
 	
 	<s:HGroup width="100%" paddingLeft="5" paddingTop="4" paddingBottom="4" paddingRight="5" verticalAlign="middle">		
 		<s:Label text="Config:" paddingTop="2.5"/>
-		<s:TextInput text="@{_xml.@config}" change="changeHandler()" width="100%" />
+		<s:TextInput id="config" text="@{_xml.@config}" change="changeHandler()" width="100%" />
 		<s:Label text="Config Type: " paddingTop="2.5"/>
-		<s:DropDownList id="configtype" selectedItem="@{_xml.@configType}" change="changeHandler()" >
+		<s:DropDownList id="configType" change="configTypeChangeHandler()" >
 			<s:dataProvider>
 				<s:ArrayList>
 					<fx:String></fx:String>
