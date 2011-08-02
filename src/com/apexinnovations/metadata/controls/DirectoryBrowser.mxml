@@ -58,7 +58,7 @@
 		<s:TextInput id="filePath" text="{defaultPath}" width="400"/>
 		<s:Button id="browseButton" label="Browse" click="browseForFile(event)" />
 	</s:HGroup>
-	<s:Button id="openButton" label="Okay" click="openSelection(event)" />
+	<s:Button id="openButton" label="Open Product" click="openSelection(event)" />
 
 	
 </s:Group>

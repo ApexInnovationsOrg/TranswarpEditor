@@ -29,15 +29,11 @@
 			import com.apexinnovations.transwarp.utils.Utils;
 			import com.apexinnovations.transwarp.webservices.ApexWebService;
 			
-			import flashx.textLayout.TextLayoutVersion;
-			import flashx.textLayout.formats.TextLayoutFormat;
-			import flashx.textLayout.utils.CharacterUtil;
-			
 			import mx.events.FlexEvent;
 			import mx.managers.PopUpManager;
 			import mx.managers.PopUpManagerChildList;
 			
-			import spark.events.IndexChangeEvent;
+			import spark.filters.BlurFilter;
 			
 			protected var file:File;
 			
@@ -60,7 +56,8 @@
 				IMPULSE : 	"8998d80e3ea4b7688fb3e724c80a9f8f595fdefe848dda2407dbe3c2a1f7a039e41a2f6dc36ac5ee02c3b1494a236afdcfd51e186a766ab5fa9c202deea38f40",
 				HEMI 	:	"8998d80e3ea4b7688fb3e724c80a9f8ff9016eca432b0943a4c5f23da88342c9060f4aa4957ecc421a3d09a797c5766a27d642cccbe47f34013ba1e2040a7a2a",
 				CAHEMI 	:	"e312c92591e7067db6857b02130f7d8b3ce8016b9b28cc8de90efbcc81356dfb0619e755974be99c80a9d5f458deaa16720256f25b2f946b6b0a4befb9791c10",
-				RESP 	:	"69f26ef8147d984e52a9cf6cdb397592daa7a3f56a4c26b5a915c68b9c0c64ade2488a93188d9024989fc1d535d852c2875016a31690bcdf90ff9fe57b4fbe47"				
+				RESP 	:	"69f26ef8147d984e52a9cf6cdb397592daa7a3f56a4c26b5a915c68b9c0c64ade2488a93188d9024989fc1d535d852c2875016a31690bcdf90ff9fe57b4fbe47",
+				PAHEMI  : 	"67d49b78ccc09e819f3e0eed1f89f4542c732268db33d071b3070c114d54eed2f8fc957519561724fec6434235bcb464a0588563f45bcac2910bf96596a6462d"
 			}
 	
 			override protected function createChildren():void {
@@ -118,7 +115,9 @@
 				var loader:URLLoader = new URLLoader(request);
 				loader.addEventListener(Event.COMPLETE, productDataLoaded);
 				
-				progressBar.source = loader;
+				loadingGroup.visible = true;
+				mainGroup.alpha = 0.4;
+				mainGroup.filters = [new spark.filters.BlurFilter(10, 10)];
 			}
 
 
@@ -159,7 +158,7 @@
 				var loader:URLLoader = event.target as URLLoader;
 				XML.ignoreWhitespace = false;
 				var xml:XML = new XML(loader.data);
-				trace(xml.toXMLString());
+				//trace(xml.toXMLString());
 				xml.@color = xml.product.@color; //"#ff3337"; 
 				var c:Courseware = new Courseware(xml, false);
 				
@@ -226,28 +225,38 @@
 				}
 			}
 
+			protected function mainEditorCreationCompleteHandler(event:FlexEvent):void {
+				loadingGroup.visible = false;
+				mainGroup.alpha = 1;
+				mainGroup.filters = [];
+			}
+			
 		]]>
 	</fx:Script>
+	<s:Group id="mainGroup" width="100%" height="100%">		
+		<s:VGroup excludeFrom="editing" horizontalAlign="center" horizontalCenter="0" verticalCenter="-50" gap="15" enabled.loading="false">
+			<s:Label text="Select the product to edit:" paddingBottom="-10" fontSize="20" />
+			<s:ButtonBar id="productSelection" requireSelection="true">
+				<s:ArrayList>
+					<fx:Object label="" value="IMPULSE" icon="@Embed('/assets/imPULSE_logo.png')" />
+					<fx:Object label="" value="HEMI" icon="@Embed('/assets/Hemispheres_logo.png')" />
+					<fx:Object label="" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
+					<fx:Object label="" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
+					<fx:Object label="" value="PAHEMI" icon="@Embed('/assets/Hemispheres-Patient_logo.png')" />
+				</s:ArrayList>
+			</s:ButtonBar>
+			<controls:DirectoryBrowser id="directoryBrowser" defaultPath="{config.repoPath}" fileSelection="repoSelected(event)" />
+		</s:VGroup>
+		
+		<s:HGroup id="mainEditor" height="100%" width="100%" includeIn="editing" gap="0" creationComplete="mainEditorCreationCompleteHandler(event)">
+			<controls:ProductBrowser pageChanging="pageChangingHandler(event)"/>
+			<controls:PageEditor id="editor" page="{currentPageData}" savePage="savePageHandler(event)"/>
+		</s:HGroup>
+	</s:Group>
 	
-	<s:VGroup excludeFrom="editing" horizontalAlign="center" horizontalCenter="0" verticalCenter="-50" gap="15" enabled.loading="false">
-		<s:Label text="Select the product to edit:" paddingBottom="-10" fontSize="20" />
-		<s:ButtonBar id="productSelection" requireSelection="true">
-			<s:ArrayList>
-				<fx:Object label="" value="IMPULSE" icon="@Embed('/assets/imPULSE_logo.png')" />
-				<fx:Object label="" value="HEMI" icon="@Embed('/assets/Hemispheres_logo.png')" />
-				<fx:Object label="" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
-				<fx:Object label="" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
-			</s:ArrayList>
-		</s:ButtonBar>
-		<controls:DirectoryBrowser id="directoryBrowser" defaultPath="{config.repoPath}" fileSelection="repoSelected(event)" />
+	<s:VGroup id="loadingGroup" horizontalCenter="0" verticalCenter="0" visible="false" horizontalAlign="center">
+		<s:Label text="Loading Product Data" fontWeight="bold" fontSize="16"/>
+		<s:BusyIndicator />
 	</s:VGroup>
 	
-	<s:Panel horizontalCenter="0" verticalCenter="0" includeIn="loading" title="Loading Product Data" width="250">
-		<mx:ProgressBar id="progressBar" verticalCenter="0" horizontalCenter="0" label="%3%%" mode="event" />
-	</s:Panel>
-	
-	<s:HGroup height="100%" width="100%" includeIn="editing" gap="0">
-		<controls:ProductBrowser pageChanging="pageChangingHandler(event)"/>
-		<controls:PageEditor id="editor" page="{currentPageData}" savePage="savePageHandler(event)"/>
-	</s:HGroup>
 </s:WindowedApplication>
