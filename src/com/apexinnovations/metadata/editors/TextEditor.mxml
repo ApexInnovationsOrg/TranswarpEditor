@@ -10,7 +10,7 @@
 			<s:layout>
 				<s:VerticalLayout horizontalAlign="center" paddingBottom="20" gap="20"/>
 			</s:layout>
-			<s:TextArea id="markupText" height="100%" width="100%"/>
+			<s:TextArea id="markupText" height="100%" width="100%" skinClass="com.apexinnovations.metadata.skins.TextEditorTextAreaSkin"/>
 			<s:HGroup>
 				<s:Button label="Okay" />
 				<s:Button label="Cancel" click="PopUpManager.removePopUp(markupWindow)" />
@@ -48,18 +48,18 @@
 	
 	<s:transitions>
 		<s:Transition toState="expanded" autoReverse="false">				
-			<s:Sequence effectEnd="{expanding = false}">
+			<s:Sequence effectEnd="{expanding = false; textArea.setStyle('verticalScrollPolicy','auto')}">
 				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
 				<s:Resize target="{textAreaHolder}" duration="300" id="expandResize" widthBy="0"/>
 				<s:Fade target="{controlsGroup}" duration="300" alphaFrom="0" alphaTo="1" />
-				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+				<!--<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="on" />-->
 			</s:Sequence>
 		</s:Transition>
 		<s:Transition toState="collapsed" autoReverse="false">				
 			<s:Sequence>
 				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
 				<s:Resize target="{textAreaHolder}" duration="300"/>
-				<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="off" />
+				<!--<s:SetAction target="{textArea}" property="verticalScrollPolicy" value="on" />-->
 			</s:Sequence>
 		</s:Transition>
 	</s:transitions>
@@ -162,7 +162,16 @@
 			}
 			
 			public function set textFlow(value:TextFlow):void {
+				if(textArea.textFlow) {
+					textArea.textFlow.removeEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
+				}
 				textArea.textFlow = value;
+				if(value) {
+					value.addEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
+					//trace(textFlow.flowComposer.getControllerAt(0).getContentBounds().height + 20);
+				}
+				
+				//calculateSize();
 			}
 
 			protected function getListStyleSelection(type:String):int {
@@ -207,9 +216,8 @@
 				if(currentState == "expanded")
 					return;
 				
-				textFlow.addEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
-				textFlow.flowComposer.composeToPosition();
-				flowComposeComplete();
+				calculateSize();
+				
 				expanding = true;
 				currentState = "expanded"
 			}
@@ -223,6 +231,12 @@
 			
 			
 			[Bindable] protected var _measuredTextHeight:Number;
+			
+			protected function calculateSize():void {
+				textFlow.addEventListener(CompositionCompleteEvent.COMPOSITION_COMPLETE, flowComposeComplete);
+				textFlow.flowComposer.composeToPosition();
+				flowComposeComplete();
+			}
 			
 			
 			protected function flowComposeComplete(event:CompositionCompleteEvent = null):void {
@@ -238,12 +252,12 @@
 		]]>
 	</fx:Script>
 	
-	<s:HGroup id="textAreaHolder" width="100%" top="0" bottom="31" bottom.collapsed="0" height.collapsed="{collapsedHeight}" height.expanded="{Math.min(maxTextHeight, _measuredTextHeight)}">
-		<controls:TextEditorTextArea width="100%" height="100%" id="textArea" focusIn="focusInOut(event)" focusOut="focusInOut(event)" change="textChange(event)" verticalScrollPolicy.collapsed="off" horizontalScrollPolicy="off" skinClass="com.apexinnovations.metadata.skins.TextEditorTextAreaSkin"/>
+	<s:HGroup id="textAreaHolder" width="100%" top="31" bottom="0" top.collapsed="0" height.collapsed="{collapsedHeight}" height.expanded="{Math.min(maxTextHeight, _measuredTextHeight)}">
+		<controls:TextEditorTextArea width="100%" height="100%" id="textArea" focusIn="focusInOut(event)" focusOut="focusInOut(event)" change="textChange(event)" horizontalScrollPolicy="off" skinClass="com.apexinnovations.metadata.skins.TextEditorTextAreaSkin"/>
 		<s:Button toolTip="{deleteButtonToolTip}" width="{hasDeleteButton ? 20 : 0}" height="{hasDeleteButton ? 20 : 0}" visible="{hasDeleteButton}" click="dispatchEvent(new RemoveItemEvent(null))" icon="@Embed('/assets/remove_icon.png')" />
 	</s:HGroup>
 	
-	<s:HGroup id="controlsGroup" bottom="0" visible.collapsed="false" maxHeight.collapsed="0" width="100%" verticalAlign="middle">	
+	<s:HGroup id="controlsGroup" top="0" visible.collapsed="false" maxHeight.collapsed="0" width="100%" verticalAlign="middle">	
 		
 		<s:ToggleButton width="20" height="20" toolTip="Bold" selected="@{textArea.bold}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_bold.png')"/>
 		<s:ToggleButton width="20" height="20" toolTip="Underline"  selected="@{textArea.underline}" tabFocusEnabled="false" mouseFocusEnabled="false" icon="@Embed('/assets/icon_style_underline.png')"/>
