@@ -24,6 +24,7 @@
 			
 			protected function changeHandler():void {
 				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+				focusIn();
 			}
 			
 			[Bindable] protected function get demo():Boolean { return _demo; }
@@ -32,10 +33,17 @@
 				xml.@demo = value;
 			}
 			
+			protected function focusIn(event:FocusEvent = null):void {
+				dispatchEvent(new Event(FOCUS_GAINED));
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="0xffffff" />
+		</s:fill>
 		<s:stroke>
 			<s:SolidColorStroke color="0" weight="1"/>
 		</s:stroke>
@@ -43,10 +51,10 @@
 	
 	<s:HGroup verticalAlign="middle" paddingTop="4" paddingBottom="4" paddingLeft="5" paddingRight="5" width="100%">
 		<s:Label text="SWF:" paddingTop="2.5"/>
-		<s:TextInput text="@{_xml.@swf}" width="100%" change="changeHandler()"/>
+		<s:TextInput text="@{_xml.@swf}" width="100%" change="changeHandler()" focusIn="focusIn(event)"/>
 		<s:Label text="Audio:" paddingTop="2.5"/>
 		<s:TextInput text="@{_xml.@audio}" width="100%" change="changeHandler()" />
-		<s:CheckBox label="Timeline" selected="@{timeline}" />
+		<s:CheckBox label="Timeline" selected="@{timeline}" change="changeHandler()"/>
 		<s:CheckBox label="Demo" selected="@{demo}" change="changeHandler()" />
 	</s:HGroup>
 </editors:FieldEditor>

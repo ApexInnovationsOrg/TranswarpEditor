@@ -7,6 +7,16 @@
 		<![CDATA[
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
 			
+			protected var pendingXML:XML;
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				if(pendingXML)
+					xml = pendingXML;
+				pendingXML = null;
+			}
+			
 			
 			protected function changeHandler():void {
 				if(config.text != _xml.@config)
@@ -22,6 +32,10 @@
 			}
 			
 			override public function set xml(value:XML):void {
+				if(!configType) {
+					pendingXML = value;
+					return;
+				}
 				super.xml = value;
 				if(!value)
 					return;
@@ -34,6 +48,9 @@
 		<s:stroke>
 			<s:SolidColorStroke color="0" />
 		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xffffff" />
+		</s:fill>
 	</s:Rect>
 	
 	<s:HGroup width="100%" paddingLeft="5" paddingTop="4" paddingBottom="4" paddingRight="5" verticalAlign="middle">		

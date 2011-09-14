@@ -83,6 +83,7 @@
 			[Bindable] public var collapsedHeight:Number = 35;	
 			[Bindable] public var hasDeleteButton:Boolean = false;
 			[Bindable] public var deleteButtonToolTip:String = "";
+			[Bindable] public var maxTextHeight:Number = Number.MAX_VALUE;
 			
 			[Embed(source="/assets/link_icon.png")]	protected const linkIcon:Class;
 			[Embed(source="/assets/blue_link_icon.png")] protected const blueLinkIcon:Class;			
@@ -237,7 +238,7 @@
 		]]>
 	</fx:Script>
 	
-	<s:HGroup id="textAreaHolder" width="100%" top="0" bottom="31" bottom.collapsed="0" height.collapsed="{collapsedHeight}" height.expanded="{_measuredTextHeight}">
+	<s:HGroup id="textAreaHolder" width="100%" top="0" bottom="31" bottom.collapsed="0" height.collapsed="{collapsedHeight}" height.expanded="{Math.min(maxTextHeight, _measuredTextHeight)}">
 		<controls:TextEditorTextArea width="100%" height="100%" id="textArea" focusIn="focusInOut(event)" focusOut="focusInOut(event)" change="textChange(event)" verticalScrollPolicy.collapsed="off" horizontalScrollPolicy="off" skinClass="com.apexinnovations.metadata.skins.TextEditorTextAreaSkin"/>
 		<s:Button toolTip="{deleteButtonToolTip}" width="{hasDeleteButton ? 20 : 0}" height="{hasDeleteButton ? 20 : 0}" visible="{hasDeleteButton}" click="dispatchEvent(new RemoveItemEvent(null))" icon="@Embed('/assets/remove_icon.png')" />
 	</s:HGroup>

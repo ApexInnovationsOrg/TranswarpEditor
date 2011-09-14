@@ -48,17 +48,8 @@
 			}			
 			
 			override protected function createChildren():void {
-				super.createChildren();
-				
-				for(var i:int=0; i < fieldGroup.numElements; ++i) {
-					var field:FieldEditor = fieldGroup.getElementAt(i) as FieldEditor;
-					if(field) {
-						BindingUtils.bindProperty(field, "xml", this, "page");
-						//field.backgroundColor = (i % 2) ? 0xeeeeff : 0xccccff;
-						field.addEventListener(FieldEditor.FOCUS_GAINED, updateFocus);
-						field.addEventListener(TranswarpEditorEvent.FIELD_VALUE_CHANGE, fieldChanged);
-					}
-				}				
+				addEventListener(TranswarpEditorEvent.FIELD_CREATED, initField);
+				super.createChildren();		
 			}
 			
 
@@ -83,6 +74,18 @@
 				madeChanges = true;
 			}
 
+			protected function initField(event:Event):void {
+				var field:FieldEditor = event.target as FieldEditor;
+				if(!field) {
+					trace("derp!")
+					return;
+				}
+				BindingUtils.bindProperty(field, "xml", this, "page");
+				
+				field.addEventListener(FieldEditor.FOCUS_GAINED, updateFocus);
+				field.addEventListener(TranswarpEditorEvent.FIELD_VALUE_CHANGE, fieldChanged);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -90,24 +93,52 @@
 		<s:VerticalLayout gap="10" horizontalAlign="center" paddingTop="30" paddingBottom="10" paddingLeft="0" paddingRight="0" clipAndEnableScrolling="true" />
 	</s:layout>
 	
-	<ui:PageTitle fontSize="20" />
+	<ui:PageTitle fontSize="20" suffix="{madeChanges ? '*' : ''}"/>
 	
-	<s:Scroller width="100%" height="100%" verticalScrollPolicy="auto">
-		<s:VGroup id="fieldGroup" gap="0" horizontalCenter="0" width="100%" paddingRight="2">
-			<editors:SimpleFieldEditor label="Page Title" field="@name"/>
-			<editors:AdminSettingsEditor/>
-			<editors:ConfigEditor/>
-			<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
-			<editors:SimpleFieldEditor label="SWF" field="@swf" />
-			<editors:TextFlowFieldEditor label="Instructions" field="instructions"/>
-			<editors:TextFlowFieldEditor label="Supporting Text" field="supportText" />
-			<editors:TextFlowFieldEditor label="Description" field="description" />
-			<editors:TextFlowFieldEditor label="Transcript" field="transcript" />
-			<editors:ListFieldEditor label="Key Questions" field="questions" itemLabel="Question" itemClass="{QuestionEditor}"/>
-			<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
-			<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>
-		</s:VGroup>		
-	</s:Scroller>
+	<s:VGroup width="95%" height="100%" gap="-1">
+		<s:TabBar dataProvider="{views}"/>
+		<s:Group width="100%" height="100%" id="editorGroup">		
+					
+			<s:Rect width="100%" height="100%" radiusX="4" topLeftRadiusX="0" topLeftRadiusY="0">
+				<s:fill>
+					<s:SolidColor color="0xeeeeee" alpha="1" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke pixelHinting="true"/>
+				</s:stroke>
+				<s:filters>
+					<s:DropShadowFilter alpha="0.5" distance="3" />
+				</s:filters>
+			</s:Rect>
+			
+			<mx:ViewStack id="views" left="10" right="10" top="15" bottom="15">
+				<s:NavigatorContent label="General" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:SimpleFieldEditor label="Page Title" field="@name"/>
+					<editors:TextFlowFieldEditor label="Instructions" field="instructions" maxTextHeight="{editorGroup.height - 160}"/>
+					<editors:TextFlowFieldEditor label="Description" field="description" maxTextHeight="{editorGroup.height - 160}"/>
+					<editors:ListFieldEditor label="Key Questions" field="questions" itemLabel="Question" itemClass="{QuestionEditor}"/>
+					<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>
+				</s:NavigatorContent>
+				
+				<s:NavigatorContent label="Transcripts" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:TextFlowFieldEditor label="Additional Info" field="supportText" maxTextHeight="{editorGroup.height - 160}"/>
+					<editors:TextFlowFieldEditor label="Transcript" field="transcript" maxTextHeight="{editorGroup.height - 160}"/>
+					<editors:TextFlowFieldEditor label="Audio Transcript" field="audioTranscript" />
+				</s:NavigatorContent>
+				
+				<s:NavigatorContent label="Advanced" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:AdminSettingsEditor/>
+					<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
+					<editors:SimpleFieldEditor label="Snapshot" field="@snapshot" />
+					<editors:ConfigEditor/>
+					<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
+				</s:NavigatorContent>	
+				
+			</mx:ViewStack>
+		</s:Group>
+	</s:VGroup>
+	
+	
 	<s:HGroup>	
 		<!--<s:Button label="test" click="updateFocus(); trace(_page.toXMLString());" />-->
 		<!--<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />-->

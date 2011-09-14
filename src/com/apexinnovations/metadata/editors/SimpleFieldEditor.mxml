@@ -18,8 +18,8 @@
 			}
 
 		]]>
-	</fx:Script>	
-
+	</fx:Script>
+	
 	<s:TextInput text="@{xml[field]}" width="100%" focusIn="focusIn(event)" change="changeHandler()"/>		
 
 </editors:FieldEditor>

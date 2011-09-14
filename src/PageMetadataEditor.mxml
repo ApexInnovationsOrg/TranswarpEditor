@@ -4,11 +4,12 @@
 					      xmlns:mx="library://ns.adobe.com/flex/mx"
 						  xmlns:metadata="com.apexinnovations.metadata.*"
 						  xmlns:controls="com.apexinnovations.metadata.controls.*"
-						  minWidth="1280" minHeight="720"
+						  minWidth="1140" minHeight="600"
 						  closing="closingHandler(event)"
 						  creationComplete="creationCompleteHandler(event)">
 	<s:states>
-		<s:State name="default"/>
+		<s:State name="update" />
+		<s:State name="default" />
 		<s:State name="loading" />
 		<s:State name="editing" />
 	</s:states>
@@ -20,6 +21,7 @@
 			import com.apexinnovations.metadata.events.FileSelectionEvent;
 			import com.apexinnovations.metadata.events.PageChangingEvent;
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			import com.apexinnovations.metadata.updates.TranswarpUpdater;
 			import com.apexinnovations.transwarp.assets.AssetLoader;
 			import com.apexinnovations.transwarp.data.Course;
 			import com.apexinnovations.transwarp.data.Courseware;
@@ -47,9 +49,7 @@
 			[Bindable] protected var currentPageData:XML;
 			
 			protected var pendingSelection:Page;
-			
-			protected var saveDialog:SaveDialog;
-			
+			protected var saveDialog:SaveDialog;			
 			protected var createCompleted:Boolean = false;
 			
 			protected var requestDataByProduct:Object = {
@@ -62,7 +62,7 @@
 	
 			override protected function createChildren():void {
 				super.createChildren();
-				
+								
 				configFile = new File(File.applicationStorageDirectory.nativePath + File.separator + "config.xml");
 				if(configFile.exists) {
 					configFile.addEventListener(Event.COMPLETE, configLoaded);
@@ -70,13 +70,11 @@
 					configFile.load();
 				} else
 					config = new EditorConfig();
-				
-				
 			}
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				createCompleted = true;
-				applyConfiguration();
+				var updater:TranswarpUpdater = new TranswarpUpdater();
+				updater.addEventListener(Event.COMPLETE, updateCheckComplete);
 			}
 			
 			
@@ -86,8 +84,15 @@
 				applyConfiguration();
 			}
 			
+			override public function set currentState(value:String):void {
+				super.currentState = value;
+				if(value == "default")
+					applyConfiguration();				
+				
+			}
+			
 			protected function applyConfiguration():void {
-				if(!config || !createCompleted)
+				if(currentState != "default" || !config)
 					return;
 				
 				if(config.selectedProduct) {
@@ -122,6 +127,8 @@
 
 
 			protected function savePageHandler(event:Event):void {
+				//dispatchEvent(new TranswarpEditorEvent
+				
 				XML.prettyPrinting = false;
 				
 				var stream:FileStream = new FileStream()
@@ -138,7 +145,6 @@
 
 
 			protected function closingHandler(event:Event):void {
-	
 				var stream:FileStream = new FileStream()
 				stream.open(configFile, FileMode.WRITE);
 				
@@ -159,15 +165,12 @@
 				XML.ignoreWhitespace = false;
 				var xml:XML = new XML(loader.data);
 				//trace(xml.toXMLString());
-				xml.@color = xml.product.@color; //"#ff3337"; 
+				xml.@color = xml.product.@color; 
 				var c:Courseware = new Courseware(xml, false);
 				
 				for each(var course:Course in c.product.courses)
 					for each(var page:Page in course.pages)
 						page.visited = true;
-				
-				AssetLoader.instance.addBitmapAsset("http://www.apexsandbox.com/Classroom/engine/" + c.product.logoBig, "logoBig");
-				AssetLoader.instance.addBitmapAsset("http://www.apexsandbox.com/Classroom/engine/" + c.product.logoSmall, "logoSmall");
 				
 				currentState = "editing";
 				
@@ -231,20 +234,31 @@
 				mainGroup.filters = [];
 			}
 			
+			protected function updateCheckComplete(event:Event):void {
+				currentState = "default";
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				//trace(unscaledWidth, unscaledHeight);
+				
+			}
+			
 		]]>
 	</fx:Script>
 	<s:Group id="mainGroup" width="100%" height="100%">		
-		<s:VGroup excludeFrom="editing" horizontalAlign="center" horizontalCenter="0" verticalCenter="-50" gap="15" enabled.loading="false">
+		<s:VGroup excludeFrom="editing,update" horizontalAlign="center" horizontalCenter="0" verticalCenter="-50" gap="15" enabled.loading="false">
 			<s:Label text="Select the product to edit:" paddingBottom="-10" fontSize="20" />
-			<s:ButtonBar id="productSelection" requireSelection="true">
+			<s:DropDownList id="productSelection" requireSelection="true" width="200">
 				<s:ArrayList>
-					<fx:Object label="" value="IMPULSE" icon="@Embed('/assets/imPULSE_logo.png')" />
-					<fx:Object label="" value="HEMI" icon="@Embed('/assets/Hemispheres_logo.png')" />
-					<fx:Object label="" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
-					<fx:Object label="" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
-					<fx:Object label="" value="PAHEMI" icon="@Embed('/assets/Hemispheres-Patient_logo.png')" />
+					<fx:Object label="imPULSE" value="IMPULSE" icon="@Embed('/assets/imPULSE_logo.png')" />
+					<fx:Object label="Hemispheres" value="HEMI" icon="@Embed('/assets/Hemispheres_logo.png')" />
+					<fx:Object label="Responder" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
+					<fx:Object label="Canadian Hemispheres" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
+					<fx:Object label="Hemispheres Patient/Family" value="PAHEMI" icon="@Embed('/assets/Hemispheres-Patient_logo.png')" />
 				</s:ArrayList>
-			</s:ButtonBar>
+			</s:DropDownList>
 			<controls:DirectoryBrowser id="directoryBrowser" defaultPath="{config.repoPath}" fileSelection="repoSelected(event)" />
 		</s:VGroup>
 		
@@ -254,8 +268,13 @@
 		</s:HGroup>
 	</s:Group>
 	
-	<s:VGroup id="loadingGroup" horizontalCenter="0" verticalCenter="0" visible="false" horizontalAlign="center">
+	<s:VGroup id="loadingGroup" horizontalCenter="0" verticalCenter="-15" visible="false" horizontalAlign="center">
 		<s:Label text="Loading Product Data" fontWeight="bold" fontSize="16"/>
+		<s:BusyIndicator />
+	</s:VGroup>
+	
+	<s:VGroup id="updateGroup" horizontalCenter="0" verticalCenter="-15" includeIn="update" horizontalAlign="center">
+		<s:Label text="Checking for updates" fontWeight="bold" fontSize="16"/>
 		<s:BusyIndicator />
 	</s:VGroup>
 	

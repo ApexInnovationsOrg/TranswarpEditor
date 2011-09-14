@@ -14,6 +14,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			import com.apexinnovations.transwarp.utils.Utils;
 			
 			import flashx.textLayout.conversion.ConversionType;
 			import flashx.textLayout.conversion.TextConverter;
@@ -30,6 +31,12 @@
 			import spark.events.TextOperationEvent;
 			
 			protected var watcher:ChangeWatcher;
+			protected var pendingMarkup:XMLList;
+			protected var dirty:Boolean = false;
+			protected var prevMarkup:XML;
+			
+			
+			[Bindable] public var maxTextHeight:Number = Number.MAX_VALUE;
 			
 			protected function setupBinding():void {
 				if(watcher)
@@ -39,14 +46,25 @@
 			
 			override protected function createChildren():void {
 				super.createChildren();
+				if(pendingMarkup) {
+					markupChanged(pendingMarkup)
+					pendingMarkup = null;
+				}
 			}
 						
 			protected function markupChanged(value:XMLList):void {
+				if(!textEditor) {
+					pendingMarkup = value;
+					return;
+				}
+				
 				var config:Configuration = new Configuration();
 				var fmt:TextLayoutFormat = new TextLayoutFormat();
 				fmt.whiteSpaceCollapse = WhiteSpaceCollapse.COLLAPSE;
 				config.textFlowInitialFormat = fmt;				
-				textEditor.textFlow = TextConverter.importToFlow(value[0], TextConverter.TEXT_LAYOUT_FORMAT, config);
+				
+				textEditor.textFlow = TextConverter.importToFlow(value ? value[0] : null, TextConverter.TEXT_LAYOUT_FORMAT, config);
+				prevMarkup = XML(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE)) 
 			}
 											
 			override public function set field(value:String):void {
@@ -62,14 +80,28 @@
 			}
 			
 			public function commitChanges():void {
+				if(!dirty)
+					return;
+				
 				var node:XML = xml[field][0];
 				if(node)
 					delete node.*;
 				else
 					node = <{field}/>;
 				
-				node.appendChild(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+				//trace("committing changes", this);
+				
+				var markup:XML = XML(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE));
+				
+				var s:String = "";
+				for each(var child:XML in markup..*)
+					s += child.text();
+					
+				if(Utils.trim(s) != "")
+					node.appendChild(markup);
+				
 				xml[field] = node;
+				dirty = false;
 			}
 			
 			public function expand():void {
@@ -91,15 +123,21 @@
 			protected function textEditor_focusInHandler(event:FocusEvent):void {
 				dispatchEvent(new Event(FOCUS_GAINED));
 			}
-
-
+			
 			protected function textChange(event:TextOperationEvent):void {
-				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+				// Hack to prevent extraneous change events from doing a copy
+				var markup:XML = XML(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE))
+				if(markup != prevMarkup) {
+					//trace("dirty = true", this);
+					dirty = true;
+					dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+				}
+				prevMarkup = markup;
 			}
 
 		]]>
 	</fx:Script>
 	
-	<editors:TextEditor id="textEditor" focusIn="textEditor_focusInHandler(event)" focusOut="commitChanges()" change="textChange(event)" left="0" right="-5" height="100%"/>
+	<editors:TextEditor id="textEditor" focusIn="textEditor_focusInHandler(event)" focusOut="commitChanges()" change="textChange(event)" left="0" right="-5" height="100%" maxTextHeight="{maxTextHeight}"/>
 	
 </editors:FieldEditor>

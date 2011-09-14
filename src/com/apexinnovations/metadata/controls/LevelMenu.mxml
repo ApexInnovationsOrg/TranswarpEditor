@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:graphics="com.apexinnovations.transwarp.graphics.*"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:tree="com.apexinnovations.transwarp.ui.tree.*"
+		 xmlns:ui="com.apexinnovations.transwarp.ui.*"
+		 xmlns:logos="com.apexinnovations.transwarp.graphics.logos.*"
+		 width="280"
+		 creationComplete="creationCompleteHandler(event)" xmlns:controls="com.apexinnovations.metadata.controls.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.transwarp.data.Course;
+			import com.apexinnovations.transwarp.data.CourseList;
+			import com.apexinnovations.transwarp.data.Courseware;
+			import com.apexinnovations.transwarp.events.ContentAreaSizeEvent;
+			import com.apexinnovations.transwarp.graphics.*;
+			import com.apexinnovations.transwarp.utils.TranswarpVersion;
+			
+			import mx.collections.ArrayList;
+			import mx.events.FlexEvent;
+			import mx.utils.ColorUtil;
+			
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var list:ArrayList = new ArrayList();
+				for each(var course:Course in Courseware.instance.product.courses)
+					list.addItem(course);
+				
+				levelSelect.dataProvider = list;
+				levelSelect.selectedItem = Courseware.instance.currentCourse;
+			}
+			
+			protected function levelDropDownLabelFunction(item:Object):String {
+				var c:Course = item as Course;
+				if(!c)
+					return item.toString();
+				else
+					return c.levelRoman + '. ' + c.name;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Metadata>
+		[ResourceBundle("Chrome")]
+	</fx:Metadata>
+	
+	<s:Rect width="100%" height="100%" topRightRadiusX="12" bottomRightRadiusX="12">
+		<s:fill>
+			<s:LinearGradient rotation="90" >
+				<s:GradientEntry color="0xeaeae9" />
+				<s:GradientEntry color="0xcfd0d0" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:DropShadowFilter blurX="5" blurY="5" distance="5" alpha="0.09" angle="225" inner="true"/>
+		</s:filters>
+	</s:Rect>
+	
+	<!--  Header  -->
+	<s:Rect width="100%" height="66" topRightRadiusX="12">
+		<s:fill>
+			<s:LinearGradient>
+				<s:GradientEntry color="{ColorUtil.adjustBrightness2(Courseware.instance.color, -30)}"/>
+				<s:GradientEntry color="{Courseware.instance.color}" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:DropShadowFilter blurX="5" blurY="5" distance="5" alpha="0.2" angle="225" inner="true"/> 
+		</s:filters>
+	</s:Rect>
+	
+	
+	<controls:HoverGroup id="hoverGroup" left="25" top="15" right="25">
+		<controls:normal>
+			<s:VGroup  color="0xffffff" gap="10">
+				<s:Label fontWeight="bold" fontSize="20" fontFamily="Arial"
+						 text="{resourceManager.getString('Chrome','LEVEL')} {Courseware.instance.currentCourse.levelRoman}"/>				
+				<s:Label text="{Courseware.instance.currentCourse.name}" fontFamily="Arial" fontSize="15" />
+			</s:VGroup>			
+		</controls:normal>
+		
+		<controls:hovered>
+			<s:DropDownList id="levelSelect" labelFunction="levelDropDownLabelFunction" selectedItem="@{Courseware.instance.currentCourse}"
+							skinClass="com.apexinnovations.metadata.skins.LevelSelectDropDownSkin"
+							color="0" width="100%" height="30" 
+							open="hoverGroup.lockHover = true;" close="hoverGroup.lockHover = false;" verticalCenter="0" />	
+		</controls:hovered>			
+	</controls:HoverGroup>
+	
+	
+	<s:Line left="0" right="10" bottom="60">
+		<s:stroke>
+			<s:SolidColorStroke color="0xaaaaaa" weight="1" />
+		</s:stroke>
+	</s:Line>
+	
+	<tree:Tree id="tree" width="100%" dataProvider="{Courseware.instance.currentCourseList}" selectedItem="@{Courseware.instance.currentPage}" 
+			   top="72" allowFolderSelection="false"
+			   left="0" bottom="60" right="10"/>
+	<!--  Footer  -->
+	<s:VGroup width="100%" horizontalAlign="center" bottom="8" gap="-1">
+		<logos:ApexLogo/>
+		<s:Label text="{resourceManager.getString('Chrome','COPYRIGHT')}" color="0x888888" fontSize="8" />
+	</s:VGroup>
+</s:Group>
