@@ -1,15 +1,20 @@
 package com.apexinnovations.metadata.editors {
-	import spark.components.Label;
-	import spark.components.SkinnableContainer;
+	import com.apexinnovations.metadata.events.TranswarpEditorEvent;
 	import com.apexinnovations.metadata.skins.FieldEditorSkin;
 	
+	import flash.events.Event;
+	
+	import spark.components.Label;
+	import spark.components.SkinnableContainer;
+	
 	[Event(name="focusGained", type="flash.events.Event")]
+	[Event(name="fieldCreated", type="com.apexinnovations.metadata.events.TranswarpEditorEvent")]
 	public class FieldEditor extends SkinnableContainer {
 		
 		public function FieldEditor() {
 			super();
 			setStyle("skinClass", FieldEditorSkin);
-			//percentWidth
+			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 		}
 		
 		public static const FOCUS_GAINED:String = "focusGained";
@@ -47,6 +52,10 @@ package com.apexinnovations.metadata.editors {
 		protected function updateLabel():void {
 			if(labelDisplay)
 				labelDisplay.text = _label + ":";
+		}
+		
+		protected function addedToStage(event:Event):void {
+			dispatchEvent(new TranswarpEditorEvent(TranswarpEditorEvent.FIELD_CREATED, true, false));		
 		}
 	}
 }
