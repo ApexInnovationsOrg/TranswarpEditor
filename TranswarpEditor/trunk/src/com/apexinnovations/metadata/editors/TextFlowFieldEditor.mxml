@@ -23,6 +23,7 @@
 			import flashx.textLayout.elements.TextFlow;
 			import flashx.textLayout.formats.TextLayoutFormat;
 			import flashx.textLayout.formats.WhiteSpaceCollapse;
+			import flashx.textLayout.operations.CopyOperation;
 			
 			import mx.binding.utils.BindingUtils;
 			import mx.binding.utils.ChangeWatcher;
@@ -125,14 +126,12 @@
 			}
 			
 			protected function textChange(event:TextOperationEvent):void {
-				// Hack to prevent extraneous change events from doing a copy
-				var markup:XML = XML(TextConverter.export(textEditor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE))
-				if(markup != prevMarkup) {
-					//trace("dirty = true", this);
-					dirty = true;
-					dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
-				}
-				prevMarkup = markup;
+				//prevent extraneous change events from doing a copy
+				if(event.operation is CopyOperation)
+					return;
+
+				dirty = true;
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
 			}
 
 		]]>
