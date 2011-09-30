@@ -142,7 +142,7 @@
 	<s:HGroup>	
 		<!--<s:Button label="test" click="updateFocus(); trace(_page.toXMLString());" />-->
 		<!--<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />-->
-		<s:Button label="Save" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE)); madeChanges = false;" />
+		<s:Button label="Save" toolTip="Save Changes (CTRL-S)" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE));" />
 	</s:HGroup>
 	<s:Group width="100%">
 		<s:Label right="10" text="{Courseware.instance.currentPage.id}" color="0xaaaaaa" />
