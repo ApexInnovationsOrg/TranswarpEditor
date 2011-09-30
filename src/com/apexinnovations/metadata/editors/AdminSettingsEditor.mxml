@@ -7,6 +7,10 @@
 	<fx:Script>
 		<![CDATA[
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.operations.CopyOperation;
+			
+			import spark.events.TextOperationEvent;
 			protected var _timeline:Boolean;
 			protected var _demo:Boolean;
 			
@@ -22,7 +26,10 @@
 				xml.@timeline = value;
 			}
 			
-			protected function changeHandler():void {
+			protected function changeHandler(event:Event):void {
+				if(event is TextOperationEvent && TextOperationEvent(event).operation is CopyOperation)
+					return;
+				
 				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
 				focusIn();
 			}
@@ -51,10 +58,10 @@
 	
 	<s:HGroup verticalAlign="middle" paddingTop="4" paddingBottom="4" paddingLeft="5" paddingRight="5" width="100%">
 		<s:Label text="SWF:" paddingTop="2.5"/>
-		<s:TextInput text="@{_xml.@swf}" width="100%" change="changeHandler()" focusIn="focusIn(event)"/>
+		<s:TextInput text="@{_xml.@swf}" width="100%" change="changeHandler(event)" focusIn="focusIn(event)"/>
 		<s:Label text="Audio:" paddingTop="2.5"/>
-		<s:TextInput text="@{_xml.@audio}" width="100%" change="changeHandler()" />
-		<s:CheckBox label="Timeline" selected="@{timeline}" change="changeHandler()"/>
-		<s:CheckBox label="Demo" selected="@{demo}" change="changeHandler()" />
+		<s:TextInput text="@{_xml.@audio}" width="100%" change="changeHandler(event)" />
+		<s:CheckBox label="Timeline" selected="@{timeline}" change="changeHandler(event)"/>
+		<s:CheckBox label="Demo" selected="@{demo}" change="changeHandler(event)" />
 	</s:HGroup>
 </editors:FieldEditor>

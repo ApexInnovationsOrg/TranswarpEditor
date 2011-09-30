@@ -7,6 +7,10 @@
 		<![CDATA[
 			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
 			
+			import flashx.textLayout.operations.CopyOperation;
+			
+			import spark.events.TextOperationEvent;
+			
 			protected var pendingXML:XML;
 			
 			override protected function createChildren():void {
@@ -18,9 +22,10 @@
 			}
 			
 			
-			protected function changeHandler():void {
-				if(config.text != _xml.@config)
-					dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			protected function changeHandler(event:TextOperationEvent):void {
+				if(event.operation is CopyOperation)
+					return;
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
 			}
 			
 			protected function configTypeChangeHandler():void {
@@ -55,7 +60,7 @@
 	
 	<s:HGroup width="100%" paddingLeft="5" paddingTop="4" paddingBottom="4" paddingRight="5" verticalAlign="middle">		
 		<s:Label text="Config:" paddingTop="2.5"/>
-		<s:TextInput id="config" text="@{_xml.@config}" change="changeHandler()" width="100%" />
+		<s:TextInput id="config" text="@{_xml.@config}" change="changeHandler(event)" width="100%" />
 		<s:Label text="Config Type: " paddingTop="2.5"/>
 		<s:DropDownList id="configType" change="configTypeChangeHandler()" >
 			<s:dataProvider>
