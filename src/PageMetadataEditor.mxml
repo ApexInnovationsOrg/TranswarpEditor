@@ -6,7 +6,8 @@
 						  xmlns:controls="com.apexinnovations.metadata.controls.*"
 						  minWidth="1140" minHeight="600"
 						  closing="closingHandler(event)"
-						  creationComplete="creationCompleteHandler(event)">
+						  creationComplete="creationCompleteHandler(event)"
+						  addedToStage="addedToStageHandler(event)">
 	<s:states>
 		<s:State name="update" />
 		<s:State name="default" />
@@ -126,9 +127,7 @@
 			}
 
 
-			protected function savePageHandler(event:Event):void {
-				//dispatchEvent(new TranswarpEditorEvent
-				
+			protected function savePageHandler(event:Event=null):void {
 				XML.prettyPrinting = false;
 				
 				var stream:FileStream = new FileStream()
@@ -139,6 +138,8 @@
 				
 				stream.writeBytes(bytes);
 				stream.close();
+				
+				editor.madeChanges = false;
 				
 				commitPendingSelection();
 			}
@@ -244,6 +245,17 @@
 				//trace(unscaledWidth, unscaledHeight);
 				
 			}
+			
+			protected function addedToStageHandler(event:Event):void {
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDown);
+			}
+			
+			protected function keyDown(event:KeyboardEvent):void {
+				if(currentState == "editing" && event.ctrlKey && event.keyCode == Keyboard.S) {
+					savePageHandler();
+				}
+			}
+			
 			
 		]]>
 	</fx:Script>

@@ -4,7 +4,8 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 xmlns:metadata="com.apexinnovations.metadata.*"
 		 xmlns:editors="com.apexinnovations.metadata.editors.*"
-		 width="100%" height="100%" xmlns:ui="com.apexinnovations.transwarp.ui.*">
+		 xmlns:ui="com.apexinnovations.transwarp.ui.*"
+		 width="100%" height="100%">
 
 	<fx:Metadata>
 		[Event(name="savePage", type="flash.events.Event")]		
@@ -36,7 +37,7 @@
 
 			[Bindable] 
 			public function get madeChanges():Boolean { return _madeChanges; }
-			protected function set madeChanges(value:Boolean):void	{_madeChanges = value;}
+			public function set madeChanges(value:Boolean):void	{_madeChanges = value;}
 			
 			public static const SAVE_PAGE:String = "savePage";
 			
@@ -50,8 +51,7 @@
 			override protected function createChildren():void {
 				addEventListener(TranswarpEditorEvent.FIELD_CREATED, initField);
 				super.createChildren();		
-			}
-			
+			}			
 
 			protected function updateFocus(event:Event = null):void {
 				if(event && event.target == currentFocus) //Ignore duplicate focus events 
