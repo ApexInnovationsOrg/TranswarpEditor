@@ -58,7 +58,8 @@
 				HEMI 	:	"8998d80e3ea4b7688fb3e724c80a9f8ff9016eca432b0943a4c5f23da88342c9060f4aa4957ecc421a3d09a797c5766a27d642cccbe47f34013ba1e2040a7a2a",
 				CAHEMI 	:	"e312c92591e7067db6857b02130f7d8b3ce8016b9b28cc8de90efbcc81356dfb0619e755974be99c80a9d5f458deaa16720256f25b2f946b6b0a4befb9791c10",
 				RESP 	:	"69f26ef8147d984e52a9cf6cdb397592daa7a3f56a4c26b5a915c68b9c0c64ade2488a93188d9024989fc1d535d852c2875016a31690bcdf90ff9fe57b4fbe47",
-				PAHEMI  : 	"67d49b78ccc09e819f3e0eed1f89f4542c732268db33d071b3070c114d54eed2f8fc957519561724fec6434235bcb464a0588563f45bcac2910bf96596a6462d"
+				PAHEMI  : 	"67d49b78ccc09e819f3e0eed1f89f4542c732268db33d071b3070c114d54eed2f8fc957519561724fec6434235bcb464a0588563f45bcac2910bf96596a6462d",
+				TRANSIT :	"cb13cd07dbff7a145999e2fe7167fa1aee0b4b0b2d3bf33babd925ad2850c5fa307e20684a47b5e11d813c1fce21fa54db804249f0bd44c2976de896f36251de"
 			}
 	
 			override protected function createChildren():void {
@@ -269,6 +270,7 @@
 					<fx:Object label="Responder" value="RESP" icon="@Embed('/assets/Responder_logo.png')" />	
 					<fx:Object label="Canadian Hemispheres" value="CAHEMI" icon="@Embed('/assets/Canadian_Hemispheres_logo.png')" />
 					<fx:Object label="Hemispheres Patient/Family" value="PAHEMI" icon="@Embed('/assets/Hemispheres-Patient_logo.png')" />
+					<fx:Object label="Transitions" value="TRANSIT" icon="@Embed('/assets/Transitions_logo.png')" />
 				</s:ArrayList>
 			</s:DropDownList>
 			<controls:DirectoryBrowser id="directoryBrowser" defaultPath="{config.repoPath}" fileSelection="repoSelected(event)" />
