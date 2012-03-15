@@ -77,7 +77,6 @@
 			protected function initField(event:Event):void {
 				var field:FieldEditor = event.target as FieldEditor;
 				if(!field) {
-					trace("derp!")
 					return;
 				}
 				BindingUtils.bindProperty(field, "xml", this, "page");
@@ -130,6 +129,7 @@
 					<editors:AdminSettingsEditor/>
 					<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
 					<editors:SimpleFieldEditor label="Snapshot" field="@snapshot" />
+<!--					<editors:AllowDenyEditor /> -->
 					<editors:ConfigEditor/>
 					<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
 				</s:NavigatorContent>	
