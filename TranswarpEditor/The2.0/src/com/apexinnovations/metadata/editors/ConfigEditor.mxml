@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:FieldEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					 xmlns:s="library://ns.adobe.com/flex/spark" 
+					 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:editors="com.apexinnovations.metadata.editors.*"
+					 width="100%" label="Configuration">
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.operations.CopyOperation;
+			
+			import spark.events.TextOperationEvent;
+			
+			protected var pendingXML:XML;
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				if(pendingXML)
+					xml = pendingXML;
+				pendingXML = null;
+			}
+			
+			
+			protected function changeHandler(event:TextOperationEvent):void {
+				if(event.operation is CopyOperation)
+					return;
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+			
+			protected function configTypeChangeHandler():void {
+				if(configType.selectedItem == _xml.@configType)
+					return;
+				
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+				_xml.@configType = configType.selectedItem;
+			}
+			
+			override public function set xml(value:XML):void {
+				if(!configType) {
+					pendingXML = value;
+					return;
+				}
+				super.xml = value;
+				if(!value)
+					return;
+				configType.selectedItem = String(_xml.@configType);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xffffff" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:HGroup width="100%" paddingLeft="5" paddingTop="4" paddingBottom="4" paddingRight="5" verticalAlign="middle">		
+		<s:Label text="Config:" paddingTop="2.5"/>
+		<s:TextInput id="config" text="@{_xml.@config}" change="changeHandler(event)" width="100%" />
+		<s:Label text="Config Type: " paddingTop="2.5"/>
+		<s:DropDownList id="configType" change="configTypeChangeHandler()" >
+			<s:dataProvider>
+				<s:ArrayList>
+					<fx:String></fx:String>
+					<fx:String>string</fx:String>
+					<fx:String>text</fx:String>
+					<fx:String>xml</fx:String>
+					<fx:String>swf</fx:String>
+				</s:ArrayList>
+			</s:dataProvider>
+		</s:DropDownList>
+	</s:HGroup>
+	
+</editors:FieldEditor>

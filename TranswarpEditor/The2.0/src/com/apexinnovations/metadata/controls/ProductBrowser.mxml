@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:ui="com.apexinnovations.transwarp.ui.*"
+		 xmlns:assets="com.apexinnovations.transwarp.assets.*"
+		 height="100%" xmlns:controls="com.apexinnovations.metadata.controls.*" >
+	<fx:Metadata>
+		[Event(name="pageChanging", type="com.apexinnovations.metadata.events.PageChangingEvent")]
+	</fx:Metadata>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.PageChangingEvent;
+			import com.apexinnovations.transwarp.data.Course;
+			import com.apexinnovations.transwarp.data.Courseware;
+			import com.apexinnovations.transwarp.data.Folder;
+			import com.apexinnovations.transwarp.data.Page;
+			
+			import mx.collections.ArrayList;
+			import mx.collections.IList;
+			import mx.utils.ColorUtil;
+			
+			import spark.events.IndexChangeEvent;
+			
+			override protected function createChildren():void {
+				super.createChildren();
+				
+				levelMenu.tree.addEventListener(IndexChangeEvent.CHANGING, pageChanging);
+			}
+
+			protected function pageChanging(event:IndexChangeEvent):void {
+				var dataProvider:IList = levelMenu.tree.dataProvider;
+				var obj:Object;
+				if(event.newIndex !== -1)
+					obj = dataProvider.getItemAt(event.newIndex);
+				
+				if(obj is Folder)
+					return;
+									
+				if(!dispatchEvent(new PageChangingEvent(obj as Page, false, true)))
+					event.preventDefault();
+			}
+
+		]]>
+	</fx:Script>
+	
+	
+	<controls:LevelMenu id="levelMenu" height="100%" left="0"/>
+</s:Group>

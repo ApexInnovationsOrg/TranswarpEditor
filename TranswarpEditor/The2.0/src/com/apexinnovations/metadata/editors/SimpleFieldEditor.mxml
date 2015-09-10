@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editors:FieldEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx"
+						  xmlns:metadata="com.apexinnovations.metadata.*"
+						  width="100%" xmlns:editors="com.apexinnovations.metadata.editors.*">
+
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.operations.CopyOperation;
+			
+			import spark.events.TextOperationEvent;
+			
+			protected var prev:String;
+			
+			protected function focusIn(event:FocusEvent):void {
+				dispatchEvent(new Event(FOCUS_GAINED));
+			}
+
+			protected function changeHandler(event:TextOperationEvent):void {
+				if(event.operation is CopyOperation)
+					return;
+				dispatchEvent(new Event(TranswarpEditorEvent.FIELD_VALUE_CHANGE, true));
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:TextInput text="@{xml[field]}" width="100%" focusIn="focusIn(event)" change="changeHandler(event);"/>		
+
+</editors:FieldEditor>

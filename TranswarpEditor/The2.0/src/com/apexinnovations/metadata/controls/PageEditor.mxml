@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:metadata="com.apexinnovations.metadata.*"
+		 xmlns:editors="com.apexinnovations.metadata.editors.*"
+		 xmlns:ui="com.apexinnovations.transwarp.ui.*"
+		 width="100%" height="100%">
+
+	<fx:Metadata>
+		[Event(name="savePage", type="flash.events.Event")]		
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.transwarp.data.Courseware;
+		]]>
+	</fx:Script>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.apexinnovations.metadata.editors.FieldEditor;
+			import com.apexinnovations.metadata.editors.IExpandableEditor;
+			import com.apexinnovations.metadata.editors.LinkEditor;
+			import com.apexinnovations.metadata.editors.QuestionEditor;
+			import com.apexinnovations.metadata.editors.UpdateEditor;
+			import com.apexinnovations.metadata.events.TranswarpEditorEvent;
+			
+			import flashx.textLayout.conversion.TextConverter;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.events.StateChangeEvent;
+			protected var _page:XML;
+			
+			protected var currentFocus:FieldEditor;
+			
+			protected var _madeChanges:Boolean = false;
+
+			[Bindable] 
+			public function get madeChanges():Boolean { return _madeChanges; }
+			public function set madeChanges(value:Boolean):void	{_madeChanges = value;}
+			
+			public static const SAVE_PAGE:String = "savePage";
+			
+			[Bindable]
+			public function get page():XML { return _page; }
+			public function set page(value:XML):void {
+				madeChanges = false;
+				_page = value;
+			}			
+			
+			override protected function createChildren():void {
+				addEventListener(TranswarpEditorEvent.FIELD_CREATED, initField);
+				super.createChildren();		
+			}			
+
+			protected function updateFocus(event:Event = null):void {
+				if(event && event.target == currentFocus) //Ignore duplicate focus events 
+					return;
+				
+				if(currentFocus && currentFocus is IExpandableEditor)
+					IExpandableEditor(currentFocus).collapse();
+				
+				currentFocus = event ? event.target as FieldEditor : null;
+				
+				if(currentFocus && currentFocus is IExpandableEditor)
+					IExpandableEditor(currentFocus).expand();
+			}
+
+			protected function revertChanges():void {
+				//TODO: Uh, yeah
+			}
+			
+			protected function fieldChanged(event:Event):void {
+				madeChanges = true;
+			}
+
+			protected function initField(event:Event):void {
+				var field:FieldEditor = event.target as FieldEditor;
+				if(!field) {
+					return;
+				}
+				BindingUtils.bindProperty(field, "xml", this, "page");
+				
+				field.addEventListener(FieldEditor.FOCUS_GAINED, updateFocus);
+				field.addEventListener(TranswarpEditorEvent.FIELD_VALUE_CHANGE, fieldChanged);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="10" horizontalAlign="center" paddingTop="30" paddingBottom="10" paddingLeft="0" paddingRight="0" clipAndEnableScrolling="true" />
+	</s:layout>
+	
+	<ui:PageTitle fontSize="20" suffix="{madeChanges ? '*' : ''}"/>
+	
+	<s:VGroup width="95%" height="100%" gap="-1">
+		<s:TabBar dataProvider="{views}"/>
+		<s:Group width="100%" height="100%" id="editorGroup">		
+					
+			<s:Rect width="100%" height="100%" radiusX="4" topLeftRadiusX="0" topLeftRadiusY="0">
+				<s:fill>
+					<s:SolidColor color="0xeeeeee" alpha="1" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke pixelHinting="true"/>
+				</s:stroke>
+				<s:filters>
+					<s:DropShadowFilter alpha="0.5" distance="3" />
+				</s:filters>
+			</s:Rect>
+			
+			<mx:ViewStack id="views" left="10" right="10" top="15" bottom="15">
+				<s:NavigatorContent label="General" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:SimpleFieldEditor label="Page Title" field="@name"/>
+					<editors:TextFlowFieldEditor label="Instructions" field="instructions" maxTextHeight="{editorGroup.height - 200}"/>
+					<editors:TextFlowFieldEditor label="Description" field="description" maxTextHeight="{editorGroup.height - 200}"/>
+					<editors:ListFieldEditor label="Key Questions" field="questions" itemLabel="Question" itemClass="{QuestionEditor}"/>
+					<editors:ListFieldEditor label="Links" field="links" itemLabel="Link" itemClass="{LinkEditor}"/>
+				</s:NavigatorContent>
+				
+				<s:NavigatorContent label="Transcripts" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:TextFlowFieldEditor label="Additional Info" field="supportText" maxTextHeight="{editorGroup.height - 200}"/>
+					<editors:TextFlowFieldEditor label="Transcript" field="transcript" maxTextHeight="{editorGroup.height - 200}"/>
+					<editors:TextFlowFieldEditor label="Audio Transcript" field="audioTranscript" />
+				</s:NavigatorContent>
+				
+				<s:NavigatorContent label="Advanced" skinClass="com.apexinnovations.metadata.skins.EditorGroupSkin">
+					<editors:AdminSettingsEditor/>
+					<editors:SimpleFieldEditor label="Keywords" field="keywords"/>
+					<editors:SimpleFieldEditor label="Snapshot" field="@snapshot" />
+<!--					<editors:AllowDenyEditor /> -->
+					<editors:ConfigEditor/>
+					<editors:ListFieldEditor label="Updates" field="updates" itemLabel="Update" itemClass="{UpdateEditor}"/>
+				</s:NavigatorContent>	
+				
+			</mx:ViewStack>
+		</s:Group>
+	</s:VGroup>
+	
+	
+	<s:HGroup>	
+		<!--<s:Button label="test" click="updateFocus(); trace(_page.toXMLString());" />-->
+		<!--<s:Button label="Revert" toolTip="Revert Changes" click="revertChanges()" />-->
+		<s:Button label="Save" toolTip="Save Changes (CTRL-S)" click="dispatchEvent(new Event(TranswarpEditorEvent.SAVE_PAGE));" />
+	</s:HGroup>
+	<s:Group width="100%">
+		<s:Label right="10" text="{Courseware.instance.currentPage.id}" color="0xaaaaaa" />
+	</s:Group>
+</s:Group>
